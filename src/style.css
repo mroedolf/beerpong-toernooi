@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cup: #e03c31;        /* red solo cup */
+  --color-cup-dark: #a92a22;
+  --color-beer: #f6a623;       /* amber */
+  --color-foam: #fdf3e0;       /* foam white */
+  --color-night: #16100b;      /* page background */
+  --color-night-soft: #241a12; /* card background */
+  --color-line: #3a2c1e;       /* borders */
+  --font-display: "Lilita One", system-ui, sans-serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+body {
+  background-color: var(--color-night);
+  color: var(--color-foam);
+  font-family: var(--font-sans);
+}

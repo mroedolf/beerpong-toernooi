@@ -12,7 +12,9 @@ const m = useMex()
 const newName = ref('')
 const rotation = ref(0)
 const spinning = ref(false)
-const result = ref(null)
+// Restore the last pick across reloads (matches the landing-page badge).
+const result = ref(f.state.lastPickedId ? f.playerById(f.state.lastPickedId) ?? null : null)
+let spinFallback = null
 
 const players = computed(() => f.state.players)
 const canSpin = computed(() => players.value.length >= 2 && !spinning.value)
@@ -72,12 +74,17 @@ function doSpin() {
   }
   spinning.value = true
   rotation.value += 3 * 360 + delta
+  // Safety net: if transitionend ever gets lost (interrupted transition),
+  // unlock shortly after the animation should have finished.
+  clearTimeout(spinFallback)
+  spinFallback = setTimeout(onSpinEnd, 3500)
 }
 
 function onSpinEnd() {
   if (!spinning.value) return
+  clearTimeout(spinFallback)
   spinning.value = false
-  result.value = f.playerById(f.state.lastPickedId)
+  result.value = f.playerById(f.state.lastPickedId) ?? null
 }
 </script>
 
@@ -159,7 +166,8 @@ function onSpinEnd() {
       >
         {{ p.name }}
         <button
-          class="size-7 grid place-items-center rounded-full text-foam/60 hover:text-cup focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
+          class="size-7 grid place-items-center rounded-full text-foam/60 hover:text-cup focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none disabled:opacity-40"
+          :disabled="spinning"
           :aria-label="`${p.name} verwijderen`"
           @click="act(() => f.removePlayer(p.id))"
         >✕</button>

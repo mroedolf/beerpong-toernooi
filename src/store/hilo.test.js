@@ -80,13 +80,16 @@ describe('hoger lager store', () => {
     expect(h.state.lastOutcome.correct).toBe(false)
   })
 
-  it('reshuffles a fresh deck when the pile runs out', () => {
+  it('reshuffles when the pile runs out, without a duplicate of the visible card', () => {
     twoPlayers()
     h.startGame()
     forceCurrent('5')
     forceDeck('9') // last card
     h.guess('hoger')
-    expect(h.state.deck).toHaveLength(52)
+    // 51, not 52: the new shuffle drops the duplicate of the card on the table,
+    // so an unpredictable equal-rank-equal-suit forced loss can never happen.
+    expect(h.state.deck).toHaveLength(51)
+    expect(h.state.deck.some(c => c.rank === '9' && c.suit === '♥')).toBe(false)
   })
 
   it('stopGame keeps tallies, newGame wipes them', () => {

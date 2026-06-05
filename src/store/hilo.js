@@ -99,7 +99,13 @@ const actions = {
     }
     state.current = nextCard
     state.turnIndex = (state.turnIndex + 1) % state.players.length
-    if (state.deck.length === 0) state.deck = buildDeck(rand)
+    if (state.deck.length === 0) {
+      // Fresh shuffle, minus the duplicate of the card on the table — a single
+      // physical deck can never show the same card twice in a row.
+      state.deck = buildDeck(rand).filter(
+        c => !(c.rank === state.current.rank && c.suit === state.current.suit),
+      )
+    }
   },
 
   stopGame() {

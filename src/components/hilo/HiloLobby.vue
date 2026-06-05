@@ -44,7 +44,7 @@ function add() {
 <template>
   <section class="pt-6 space-y-6">
     <header class="pour-in">
-      <h2 class="font-display text-3xl text-beer">Hoger Lager 🎴</h2>
+      <h2 class="font-display text-3xl text-beer">Hoger Lager</h2>
       <p class="text-sm text-foam/60">Hoe langer de reeks, hoe harder de straf.</p>
     </header>
 
@@ -67,7 +67,7 @@ function add() {
       class="w-full min-h-12 rounded-xl font-display bg-night-soft text-beer border-2 border-line active:translate-y-0.5 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
       @click="act(() => h.importPlayers(importable))"
     >
-      Neem spelers over 🍺
+      Neem spelers over
     </button>
 
     <ul v-if="h.state.players.length" class="space-y-2">
@@ -78,7 +78,7 @@ function add() {
         :class="i % 2 ? 'rotate-[1.2deg]' : '-rotate-1'"
       >
         <span class="flex-1 font-semibold">{{ p.name }}</span>
-        <span v-if="p.sips > 0" class="font-display text-beer text-sm">{{ p.sips }} 🍺</span>
+        <span v-if="p.sips > 0" class="font-display text-beer text-sm">{{ p.sips }} slokken</span>
         <button
           class="size-9 grid place-items-center rounded-lg text-foam/60 hover:text-cup focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
           aria-label="Speler verwijderen"
@@ -86,10 +86,10 @@ function add() {
         >✕</button>
       </li>
     </ul>
-    <p v-else class="text-center text-sm text-foam/50">Nog niemand. Wie gokt er mee? 🎴</p>
+    <p v-else class="text-center text-sm text-foam/50">Nog niemand. Wie gokt er mee?</p>
 
     <details class="rounded-2xl border-2 border-line bg-night-soft p-4">
-      <summary class="font-display text-beer cursor-pointer">Hoe werkt het? 🤔</summary>
+      <summary class="font-display text-beer cursor-pointer">Hoe werkt het?</summary>
       <ul class="mt-3 space-y-2 text-sm text-foam/80 list-disc pl-4">
         <li>Om de beurt: raad of de volgende kaart <strong>hoger</strong> of <strong>lager</strong> is.</li>
         <li>2 is de laagste, aas de hoogste. <strong>Gelijk telt als fout.</strong></li>

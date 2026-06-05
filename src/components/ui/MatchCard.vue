@@ -56,7 +56,7 @@ const gameLabel = computed(() => {
       <span
         v-if="played"
         class="font-display rounded-md border border-cup-dark/60 bg-cup/15 px-2 py-0.5 text-xs text-beer"
-      >🏆 +{{ match.cupsLeft }} bekers</span>
+      >+{{ match.cupsLeft }} bekers</span>
       <span
         v-else
         class="font-display text-xs uppercase tracking-wide text-cup"

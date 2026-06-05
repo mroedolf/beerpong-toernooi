@@ -62,7 +62,7 @@ const apiKey = ref(t.getApiKey())
 function saveApiKey() {
   try {
     t.setApiKey(apiKey.value)
-    toast('API key opgeslagen 🔑', 'success')
+    toast('API key opgeslagen', 'success')
   } catch (e) {
     toast(e.message)
   }
@@ -194,7 +194,7 @@ const lastFilledIndex = computed(() => count.value - 1)
     </ul>
 
     <p v-if="count === 0" class="mt-4 text-center text-sm text-foam/50 font-semibold">
-      Nog niemand. Gooi de eerste naam erin 🍻
+      Nog niemand. Voeg de eerste speler toe.
     </p>
 
     <!-- Tournament settings -->
@@ -242,7 +242,7 @@ const lastFilledIndex = computed(() => count.value - 1)
         :aria-expanded="aiOpen"
         @click="aiOpen = !aiOpen"
       >
-        <span>🤖 AI-teamfoto's <span class="text-foam/50 font-sans text-sm font-semibold">(optioneel)</span></span>
+        <span>AI-teamfoto's <span class="text-foam/50 font-sans text-sm font-semibold">(optioneel)</span></span>
         <span class="text-beer transition-transform duration-200" :class="aiOpen ? 'rotate-180' : ''">▾</span>
       </button>
 
@@ -286,12 +286,12 @@ const lastFilledIndex = computed(() => count.value - 1)
         class="w-full min-h-14 rounded-xl bg-cup border-b-4 border-cup-dark text-foam font-display text-2xl active:translate-y-0.5 active:border-b-2 focus:outline-none focus-visible:ring-2 ring-beer disabled:opacity-40 disabled:active:translate-y-0 disabled:active:border-b-4"
         @click="makeTeams"
       >
-        Maak teams 🎲
+        Maak teams
       </button>
       <p class="mt-2 text-center text-sm font-semibold text-foam/50">
-        <template v-if="ready">{{ count }} spelers, {{ teamsCount }} teams — tijd om te knallen!</template>
-        <template v-else-if="count < 4">Minstens 4 spelers (2 teams) nodig 🍺</template>
-        <template v-else>Oneven aantal — nog eentje erbij of eentje eruit 🍺</template>
+        <template v-if="ready">{{ count }} spelers, {{ teamsCount }} teams — we kunnen beginnen.</template>
+        <template v-else-if="count < 4">Minstens 4 spelers (2 teams) nodig.</template>
+        <template v-else>Oneven aantal — nog eentje erbij of eentje eruit.</template>
       </p>
     </div>
   </section>

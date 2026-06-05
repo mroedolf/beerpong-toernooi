@@ -91,8 +91,8 @@ function onSpinEnd() {
 <template>
   <section class="pt-6 space-y-6">
     <header class="text-center pour-in">
-      <h2 class="font-display text-3xl text-beer">De Fles 🍾</h2>
-      <p class="text-sm text-foam/60">Wie de fles aanwijst, is de pineut.</p>
+      <h2 class="font-display text-3xl text-beer">De Fles</h2>
+      <p class="text-sm text-foam/60">Wie de fles aanwijst, drinkt.</p>
     </header>
 
     <!-- The ring -->
@@ -127,7 +127,7 @@ function onSpinEnd() {
     </div>
 
     <p v-if="result" class="text-center font-display text-3xl text-cup" role="status">
-      🍾 wijst naar {{ result.name }}!
+      De fles wijst naar {{ result.name }}!
     </p>
 
     <button
@@ -135,7 +135,7 @@ function onSpinEnd() {
       :disabled="!canSpin"
       @click="doSpin"
     >
-      {{ spinning ? 'Daar gaat ie…' : 'Draai! 🍾' }}
+      {{ spinning ? 'Hij draait…' : 'Draai' }}
     </button>
 
     <form class="flex gap-2" @submit.prevent="add">
@@ -157,7 +157,7 @@ function onSpinEnd() {
       class="w-full min-h-12 rounded-xl font-display bg-night-soft text-beer border-2 border-line active:translate-y-0.5 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
       @click="act(() => f.importPlayers(importable))"
     >
-      Neem spelers over 🍺
+      Neem spelers over
     </button>
 
     <ul v-if="players.length" class="flex flex-wrap gap-2 justify-center">

@@ -43,7 +43,7 @@ function stop() {
 
     <div v-if="outcome" class="text-center space-y-0.5" role="status">
       <p class="font-display text-2xl" :class="outcome.correct ? 'text-beer' : 'text-cup'">
-        {{ outcome.correct ? 'Goed! 🎯' : 'Fout! 🍺' }}
+        {{ outcome.correct ? 'Goed!' : 'Fout!' }}
       </p>
       <p class="text-sm text-foam/70">
         {{ outcome.prevCard.rank }}{{ outcome.prevCard.suit }} → {{ outcome.nextCard.rank }}{{ outcome.nextCard.suit }}
@@ -56,18 +56,18 @@ function stop() {
         class="min-h-14 rounded-xl font-display text-2xl bg-cup text-foam border-b-4 border-cup-dark active:translate-y-0.5 active:border-b-2 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
         @click="act(() => h.guess('hoger'))"
       >
-        Hoger ⬆️
+        Hoger
       </button>
       <button
         class="min-h-14 rounded-xl font-display text-2xl bg-beer text-night border-b-4 border-beer/60 active:translate-y-0.5 active:border-b-2 focus-visible:ring-2 focus-visible:ring-cup focus-visible:outline-none"
         @click="act(() => h.guess('lager'))"
       >
-        Lager ⬇️
+        Lager
       </button>
     </div>
 
     <div class="rounded-2xl border-2 border-line bg-night-soft p-4">
-      <h3 class="font-display text-beer mb-2">Schandebord 🍺</h3>
+      <h3 class="font-display text-beer mb-2">Schandebord</h3>
       <ul class="space-y-1">
         <li v-for="p in tally" :key="p.id" class="flex justify-between text-sm">
           <span>{{ p.name }}</span>

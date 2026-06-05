@@ -78,7 +78,7 @@ onMounted(fireConfetti)
       <!-- periodic shine sweep -->
       <span class="shine" aria-hidden="true"></span>
 
-      <p class="relative font-display text-cup text-sm uppercase tracking-wide">🏆 KAMPIOENEN</p>
+      <p class="relative font-display text-cup text-sm uppercase tracking-wide">KAMPIOENEN</p>
       <h2 class="relative font-display text-foam text-4xl leading-none mt-1 mb-4 break-words">
         {{ champion.name }}
       </h2>

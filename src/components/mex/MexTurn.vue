@@ -41,7 +41,7 @@ function act(fn) {
   <section class="pt-6 space-y-6">
     <header class="text-center space-y-1 pour-in">
       <p class="text-sm font-semibold uppercase tracking-widest text-foam/50">
-        {{ inRolloff ? '⚡ Roll-off!' : `Ronde ${round.number}` }}
+        {{ inRolloff ? 'Roll-off!' : `Ronde ${round.number}` }}
       </p>
       <h2 class="font-display text-4xl text-beer leading-tight">{{ player.name }}</h2>
       <p class="text-sm text-foam/60">
@@ -56,7 +56,7 @@ function act(fn) {
     </header>
 
     <p v-if="potAdjes > 0" class="text-center text-sm font-display text-beer">
-      🍯 In de pot: {{ formatAdjes(potAdjes) }} adje
+      In de pot: {{ formatAdjes(potAdjes) }} adje
     </p>
 
     <!-- MEX stamp -->
@@ -67,12 +67,12 @@ function act(fn) {
 
     <!-- Dubbel: uitdelen -->
     <p v-if="score?.isDouble" class="mex-stamp text-center font-display text-xl text-beer" role="status">
-      Dubbel! Deel {{ roll.dice[0] }} slokken uit 🍻
+      Dubbel! Deel {{ roll.dice[0] }} slokken uit
     </p>
 
     <!-- 31: worp terug -->
     <p v-if="isReturned31" class="mex-stamp text-center font-display text-xl text-beer" role="status">
-      31! Deel 1 slok uit en gooi opnieuw 🍀
+      31! Deel 1 slok uit en gooi opnieuw
     </p>
 
     <div class="flex items-center justify-center gap-6">
@@ -100,21 +100,21 @@ function act(fn) {
         class="w-full min-h-14 rounded-xl font-display text-2xl bg-cup text-foam border-b-4 border-cup-dark active:translate-y-0.5 active:border-b-2 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
         @click="act(() => m.throwDice())"
       >
-        Gooi 🎲
+        Gooi
       </button>
       <button
         v-if="canStay && canThrow"
         class="w-full min-h-12 rounded-xl font-display text-lg bg-night-soft text-foam border-2 border-line active:translate-y-0.5 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
         @click="act(() => m.stay())"
       >
-        Blijven staan ✋
+        Blijven staan
       </button>
       <button
         v-if="roll.committed"
         class="w-full min-h-14 rounded-xl font-display text-2xl bg-beer text-night border-b-4 border-beer/60 active:translate-y-0.5 active:border-b-2 focus-visible:ring-2 focus-visible:ring-cup focus-visible:outline-none"
         @click="act(() => m.passTurn())"
       >
-        {{ isLastThrower ? 'Bekijk het resultaat 🍺' : 'Geef door 👉' }}
+        {{ isLastThrower ? 'Bekijk het resultaat' : 'Geef door' }}
       </button>
     </div>
   </section>

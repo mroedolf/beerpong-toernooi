@@ -41,7 +41,7 @@ function add() {
 <template>
   <section class="pt-6 space-y-6">
     <header class="pour-in">
-      <h2 class="font-display text-3xl text-beer">Circle of Death 🃏</h2>
+      <h2 class="font-display text-3xl text-beer">Circle of Death</h2>
       <p class="text-sm text-foam/60">Trek een kaart, vrees de koning.</p>
     </header>
 
@@ -64,7 +64,7 @@ function add() {
       class="w-full min-h-12 rounded-xl font-display bg-night-soft text-beer border-2 border-line active:translate-y-0.5 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
       @click="act(() => c.importPlayers(importable))"
     >
-      Neem spelers over 🍺
+      Neem spelers over
     </button>
 
     <ul v-if="c.state.players.length" class="space-y-2">
@@ -82,10 +82,10 @@ function add() {
         >✕</button>
       </li>
     </ul>
-    <p v-else class="text-center text-sm text-foam/50">Nog niemand. Wie durft de koning aan? 🃏</p>
+    <p v-else class="text-center text-sm text-foam/50">Nog niemand. Wie durft de koning aan?</p>
 
     <details class="rounded-2xl border-2 border-line bg-night-soft p-4">
-      <summary class="font-display text-beer cursor-pointer">De kaarten 🤔</summary>
+      <summary class="font-display text-beer cursor-pointer">De kaarten</summary>
       <ul class="mt-3 space-y-2 text-sm text-foam/80">
         <li v-for="rank in RANKS" :key="rank" class="flex gap-3">
           <span class="font-display text-beer w-7 shrink-0 text-right">{{ rank }}</span>

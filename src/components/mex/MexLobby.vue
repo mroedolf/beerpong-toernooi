@@ -41,7 +41,7 @@ function add() {
 <template>
   <section class="pt-6 space-y-6">
     <header class="pour-in">
-      <h2 class="font-display text-3xl text-beer">Mex 🎲</h2>
+      <h2 class="font-display text-3xl text-beer">Mex</h2>
       <p class="text-sm text-foam/60">Laagste worp drinkt. Zo simpel is het leven.</p>
     </header>
 
@@ -64,7 +64,7 @@ function add() {
       class="w-full min-h-12 rounded-xl font-display bg-night-soft text-beer border-2 border-line active:translate-y-0.5 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
       @click="act(() => m.importPlayers(t.state.players.map(p => p.name)))"
     >
-      Neem toernooispelers over 🍺
+      Neem toernooispelers over
     </button>
 
     <ul v-if="m.state.players.length" class="space-y-2">
@@ -76,7 +76,7 @@ function add() {
       >
         <span class="flex-1 font-semibold">{{ p.name }}</span>
         <span v-if="p.sips > 0 || p.adjes > 0" class="font-display text-beer text-sm">
-          {{ p.sips }} 🍺<template v-if="p.adjes > 0"> · {{ formatAdjes(p.adjes) }} adje</template>
+          {{ p.sips }} slokken<template v-if="p.adjes > 0"> · {{ formatAdjes(p.adjes) }} adje</template>
         </span>
         <button
           class="size-9 grid place-items-center rounded-lg text-foam/60 hover:text-cup focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
@@ -85,7 +85,7 @@ function add() {
         >✕</button>
       </li>
     </ul>
-    <p v-else class="text-center text-sm text-foam/50">Nog niemand. Wie durft? 🎲</p>
+    <p v-else class="text-center text-sm text-foam/50">Nog niemand. Wie durft?</p>
 
     <fieldset class="rounded-2xl border-2 border-line bg-night-soft p-4 space-y-4">
       <legend class="font-display text-beer px-2">Huisregels</legend>
@@ -128,11 +128,11 @@ function add() {
     </fieldset>
 
     <details class="rounded-2xl border-2 border-line bg-night-soft p-4">
-      <summary class="font-display text-beer cursor-pointer">Hoe werkt het? 🤔</summary>
+      <summary class="font-display text-beer cursor-pointer">Hoe werkt het?</summary>
       <ul class="mt-3 space-y-2 text-sm text-foam/80 list-disc pl-4">
         <li><strong>Mex</strong> (2 en 1) is de hoogste worp én gooit {{ formatAdjes(m.state.settings.potPerMex) }} adje in de pot.</li>
         <li>Dubbels zijn honderdtallen (6-6 = 600 … 1-1 = 100), kloppen alle gewone worpen, en je mag dat cijfer als slokken uitdelen.</li>
-        <li>Gewone worpen: hoogste steen ×10 + laagste (65 is top, 32 is bagger).</li>
+        <li>Gewone worpen: hoogste steen ×10 + laagste (65 is de hoogste, 32 de laagste).</li>
         <li>Gooi je <strong>31</strong>? Deel 1 slok uit en je krijgt de worp terug.</li>
         <li>De voorgooier gooit max 3 keer en bepaalt zo hoe vaak de rest mag gooien.</li>
         <li>Je mag één dobbelsteen vasthouden tussen worpen.</li>

@@ -76,7 +76,7 @@ function finish() {
 
     <!-- DE FINALE -->
     <section class="mb-8 reveal" style="--i: 2">
-      <h2 class="font-display text-2xl text-foam mb-1">🏆 DE FINALE</h2>
+      <h2 class="font-display text-2xl text-foam mb-1">DE FINALE</h2>
       <p class="text-foam/50 text-sm mb-3">Wie pakt de gouden beker?</p>
       <MatchCard
         v-if="finalMatch"
@@ -88,7 +88,7 @@ function finish() {
 
     <!-- VERLIEZERSFINALE (optional) -->
     <section v-if="losersMatch" class="mb-2 reveal" style="--i: 3">
-      <h2 class="font-display text-2xl text-foam mb-1">🥉 Verliezersfinale</h2>
+      <h2 class="font-display text-2xl text-foam mb-1">Verliezersfinale</h2>
       <p class="text-foam/50 text-sm mb-3">om de eer (en de derde plaats)</p>
       <MatchCard
         :match="losersMatch"
@@ -97,7 +97,7 @@ function finish() {
       />
     </section>
     <p v-else class="text-foam/40 text-sm mb-2 reveal" style="--i: 3">
-      Geen verliezersfinale dit toernooi — de rest mag supporteren. 🍺
+      Geen verliezersfinale dit toernooi — de rest mag supporteren.
     </p>
 
     <!-- CTA to podium -->
@@ -108,7 +108,7 @@ function finish() {
           :disabled="!allPlayed"
           @click="finish"
         >
-          Bekijk het podium 🎉
+          Bekijk het podium
         </button>
         <p v-if="!allPlayed" class="text-foam/50 text-xs text-center mt-2">
           {{ losersMatch ? 'Speel eerst beide finales uit.' : 'Speel eerst de finale uit.' }}

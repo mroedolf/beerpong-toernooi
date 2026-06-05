@@ -37,7 +37,7 @@ export const GAMES = [
     path: '/fles',
     emoji: '🍾',
     name: 'De Fles',
-    tagline: 'Wie de fles aanwijst, is de pineut.',
+    tagline: 'Wie de fles aanwijst, drinkt.',
     players: '2+ spelers',
   },
 ]

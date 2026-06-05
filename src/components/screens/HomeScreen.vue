@@ -24,7 +24,7 @@ const beerpongStatus = computed(() => {
     case 'finals':
       return 'Finales bezig 🔥'
     case 'podium':
-      return 'Afgelopen — kampioen bekend 🏆'
+      return 'Afgelopen — kampioen bekend'
     default:
       return t.state.players.length > 0 ? `${t.state.players.length} spelers ingevuld` : null
   }
@@ -36,7 +36,7 @@ const mexStatus = computed(() => {
 })
 
 const codStatus = computed(() => {
-  if (c.state.phase === 'finished') return 'Koningsbeker gedronken 💀'
+  if (c.state.phase === 'finished') return 'Koningsbeker gedronken'
   if (c.state.phase === 'playing') {
     return `${52 - c.state.deck.length}/52 kaarten · ${c.state.kingsDrawn}/4 koningen`
   }
@@ -50,7 +50,7 @@ const hiloStatus = computed(() => {
 
 const flesStatus = computed(() => {
   const last = f.state.lastPickedId ? f.playerById(f.state.lastPickedId) : null
-  if (last) return `Laatst: ${last.name} 🍾`
+  if (last) return `Laatst: ${last.name}`
   return f.state.players.length > 0 ? `${f.state.players.length} spelers klaar` : null
 })
 

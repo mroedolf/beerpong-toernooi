@@ -42,7 +42,7 @@ onMounted(fireConfetti)
       <h2 class="font-display text-5xl text-cup leading-tight">
         {{ drinker ? drinker.name : 'Iemand' }} drinkt de koningsbeker!
       </h2>
-      <p class="text-foam/60">Ad fundum. Geen genade. 💀</p>
+      <p class="text-foam/60">Ad fundum. Geen genade.</p>
     </header>
 
     <div class="space-y-2 max-w-xs mx-auto">
@@ -50,7 +50,7 @@ onMounted(fireConfetti)
         class="w-full min-h-14 rounded-xl font-display text-2xl bg-cup text-foam border-b-4 border-cup-dark active:translate-y-0.5 active:border-b-2 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
         @click="act(() => c.restart())"
       >
-        Opnieuw 🔄
+        Opnieuw
       </button>
       <button
         class="w-full min-h-12 rounded-xl font-display bg-night-soft text-foam/70 border-2 border-line active:translate-y-0.5 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"

@@ -1,4 +1,4 @@
-# Drankspelen 🍻
+# Drankspelen
 
 Drankspelletjes-site voor feestjes — kies je spel op de landingspagina.
 

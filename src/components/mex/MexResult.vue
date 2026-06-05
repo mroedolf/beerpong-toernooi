@@ -27,10 +27,10 @@ function act(fn) {
       <p class="text-sm font-semibold uppercase tracking-widest text-foam/50">Ronde gespeeld</p>
       <h2 class="font-display text-4xl text-cup leading-tight">{{ loser.name }} drinkt!</h2>
       <p class="font-display text-2xl text-beer mt-1">
-        {{ result.sips }} slokken<template v-if="result.pot > 0"> + {{ formatAdjes(result.pot) }} adje uit de pot</template> 🍺
+        {{ result.sips }} slokken<template v-if="result.pot > 0"> + {{ formatAdjes(result.pot) }} adje uit de pot</template>
       </p>
       <p v-if="result.mexCount > 0" class="text-xs text-foam/60 mt-1">
-        {{ result.mexCount }}× Mex gegooid deze ronde 🍯
+        {{ result.mexCount }}× Mex gegooid deze ronde
       </p>
     </header>
 
@@ -52,12 +52,12 @@ function act(fn) {
     </ol>
 
     <div class="rounded-2xl border-2 border-line bg-night-soft p-4">
-      <h3 class="font-display text-beer mb-2">Schandebord 🍺</h3>
+      <h3 class="font-display text-beer mb-2">Schandebord</h3>
       <ul class="space-y-1">
         <li v-for="p in tally" :key="p.id" class="flex justify-between text-sm">
           <span>{{ p.name }}</span>
           <span class="font-display text-beer">
-            {{ p.sips }} 🍺<template v-if="p.adjes > 0"> · {{ formatAdjes(p.adjes) }} adje</template>
+            {{ p.sips }} slokken<template v-if="p.adjes > 0"> · {{ formatAdjes(p.adjes) }} adje</template>
           </span>
         </li>
       </ul>

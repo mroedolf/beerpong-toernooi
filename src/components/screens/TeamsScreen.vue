@@ -54,7 +54,7 @@ function start() {
 <template>
   <section class="mx-auto flex min-h-dvh max-w-md flex-col px-4 pb-28 pt-8">
     <header class="mb-6">
-      <h1 class="font-display text-4xl leading-none text-foam">De teams! 🎲</h1>
+      <h1 class="font-display text-4xl leading-none text-foam">De teams!</h1>
       <p class="mt-2 font-sans text-foam/60">{{ teams.length }} teams, één winnaar. De bekers staan klaar.</p>
     </header>
 
@@ -82,7 +82,7 @@ function start() {
           @click="reroll"
           class="min-h-12 flex-1 rounded-xl border-2 border-line bg-night-soft px-4 font-display text-lg text-foam transition active:translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-beer"
         >
-          Herschud teams 🔀
+          Herschud teams
         </button>
         <button
           type="button"

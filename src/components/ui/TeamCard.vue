@@ -145,7 +145,7 @@ onBeforeUnmount(stopStatusRotation)
               @click="regenerate"
               class="inline-flex min-h-11 shrink-0 items-center rounded-lg border-b-2 border-cup-dark bg-cup px-4 font-display text-sm text-foam transition active:translate-y-0.5 active:border-b-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-beer"
             >
-              🔁 Opnieuw
+              Opnieuw
             </button>
           </div>
         </template>
@@ -160,7 +160,7 @@ onBeforeUnmount(stopStatusRotation)
             @click="generate"
             class="rounded-xl border-b-4 border-cup-dark bg-cup px-5 py-3 font-display text-lg text-foam transition active:translate-y-0.5 active:border-b-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-beer"
           >
-            ✨ Genereer teamfoto
+            Genereer teamfoto
           </button>
         </div>
 

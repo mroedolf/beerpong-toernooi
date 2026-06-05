@@ -38,7 +38,7 @@ function goToFinals() {
 <template>
   <section class="mx-auto max-w-md px-4 pb-28 pt-6">
     <header class="mb-5">
-      <h1 class="font-display text-3xl text-foam">Groepsfase 🍻</h1>
+      <h1 class="font-display text-3xl text-foam">Groepsfase</h1>
       <p class="font-display mt-1 text-lg text-beer tabular-nums">{{ playedCount }} / {{ matches.length }} gespeeld</p>
       <p v-if="!allDone" class="mt-1 text-sm text-foam/50">De bekers staan klaar — speel ze allemaal af.</p>
       <p v-else class="mt-1 text-sm text-foam/50">Iedereen gespeeld. Tijd voor de finales!</p>
@@ -69,7 +69,7 @@ function goToFinals() {
           class="font-display min-h-12 w-full rounded-xl border-b-4 border-cup-dark bg-cup text-xl text-foam transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-beer active:translate-y-0.5 active:border-b-2 disabled:cursor-not-allowed disabled:border-b-2 disabled:opacity-40"
           :disabled="!allDone"
           @click="goToFinals"
-        >Naar de finales 🏆</button>
+        >Naar de finales</button>
         <p v-if="!allDone" class="mt-1 text-center text-xs text-foam/50">
           Eerst alle {{ matches.length }} games afwerken ({{ matches.length - playedCount }} te gaan).
         </p>

@@ -89,7 +89,7 @@ function stop() {
         class="w-full min-h-14 rounded-xl font-display text-2xl bg-cup text-foam border-b-4 border-cup-dark active:translate-y-0.5 active:border-b-2 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
         @click="draw"
       >
-        Trek een kaart 🃏
+        Trek een kaart
       </button>
       <button
         class="w-full min-h-11 rounded-xl font-display text-sm bg-night-soft text-foam/60 border-2 border-line active:translate-y-0.5 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"

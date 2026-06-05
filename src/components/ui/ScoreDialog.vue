@@ -128,7 +128,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
         type="button"
         class="font-display mt-6 min-h-12 w-full rounded-xl border-b-4 border-cup-dark bg-cup text-xl text-foam transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-beer active:translate-y-0.5 active:border-b-2"
         @click="save"
-      >Opslaan 🍺</button>
+      >Opslaan</button>
 
       <button
         v-if="alreadyPlayed"

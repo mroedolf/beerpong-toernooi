@@ -25,4 +25,13 @@ describe('hash router', () => {
     navigate('/mex')
     expect(window.location.hash).toBe('#/mex')
   })
+  it('survives copy-paste mangling: trailing slashes and query suffixes', () => {
+    const { path } = useRoute()
+    fireHash('#/beerpong/')
+    expect(path.value).toBe('/beerpong')
+    fireHash('#/mex?utm=chat')
+    expect(path.value).toBe('/mex')
+    fireHash('#/')
+    expect(path.value).toBe('/')
+  })
 })

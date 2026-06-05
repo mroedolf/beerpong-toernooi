@@ -15,7 +15,15 @@ function freshState() {
     groupMatches: [], // { id, teamA, teamB, winnerId, cupsLeft }
     finalMatch: null,
     losersMatch: null,
+    settings: { cupsPerGame: 10, losersFinal: true },
   }
+}
+
+// Deep-merges settings so a legacy stored blob (without settings) upgrades
+// in place instead of wiping a running tournament.
+export function mergeState(parsed) {
+  const fresh = freshState()
+  return { ...fresh, ...parsed, settings: { ...fresh.settings, ...(parsed.settings ?? {}) } }
 }
 
 function load() {
@@ -24,7 +32,7 @@ function load() {
     if (!raw) return freshState()
     const parsed = JSON.parse(raw)
     if (!['setup', 'teams', 'group', 'finals', 'podium'].includes(parsed.phase)) return freshState()
-    return { ...freshState(), ...parsed }
+    return mergeState(parsed)
   } catch {
     return freshState()
   }
@@ -52,7 +60,7 @@ const actions = {
   addPlayer(name) {
     const trimmed = name.trim()
     if (!trimmed) throw new Error('Geef een naam op')
-    if (state.players.length >= 8) throw new Error('Er zijn al 8 spelers')
+    if (state.players.length >= 16) throw new Error('Er kunnen maximaal 16 spelers meedoen')
     const player = { id: crypto.randomUUID(), name: trimmed, photo: null }
     state.players.push(player)
     return player
@@ -99,9 +107,19 @@ const actions = {
   },
 
   startGroup() {
-    if (state.teams.length !== 4) throw new Error('Eerst teams maken')
+    if (state.teams.length < 2) throw new Error('Eerst teams maken')
     state.groupMatches = roundRobin(state.teams.map(t => t.id))
     state.phase = 'group'
+  },
+
+  setCupsPerGame(n) {
+    if (n !== 6 && n !== 10) throw new Error('Kies 6 of 10 bekers')
+    if (['finals', 'podium'].includes(state.phase)) throw new Error('De finales zijn al bezig')
+    state.settings.cupsPerGame = n
+  },
+  toggleLosersFinal() {
+    if (['finals', 'podium'].includes(state.phase)) throw new Error('De finales zijn al bezig')
+    state.settings.losersFinal = !state.settings.losersFinal
   },
 
   recordResult(matchId, winnerId, cupsLeft) {
@@ -109,7 +127,10 @@ const actions = {
     if (!match) throw new Error('Wedstrijd niet gevonden')
     if (winnerId !== match.teamA && winnerId !== match.teamB) throw new Error('Winnaar speelt niet mee in deze wedstrijd')
     const cups = Number(cupsLeft)
-    if (!Number.isInteger(cups) || cups < 1 || cups > 10) throw new Error('Bekers over moet tussen 1 en 10 liggen')
+    const max = state.settings.cupsPerGame
+    if (!Number.isInteger(cups) || cups < 1 || cups > max) {
+      throw new Error(`Bekers over moet tussen 1 en ${max} liggen`)
+    }
     match.winnerId = winnerId
     match.cupsLeft = cups
   },
@@ -121,7 +142,7 @@ const actions = {
   },
 
   groupDone() {
-    return state.groupMatches.length === 6 && state.groupMatches.every(isPlayed)
+    return state.groupMatches.length > 0 && state.groupMatches.every(isPlayed)
   },
   currentStandings() {
     return standings(state.teams, state.groupMatches)
@@ -129,20 +150,20 @@ const actions = {
 
   startFinals() {
     if (!this.groupDone()) throw new Error('De groepsfase is nog niet klaar')
-    const { final, losersFinal } = finalsPairings(this.currentStandings())
+    const { final, losersFinal } = finalsPairings(this.currentStandings(), state.settings.losersFinal)
     state.finalMatch = final
     state.losersMatch = losersFinal
     state.phase = 'finals'
   },
 
   finishTournament() {
-    if (!state.finalMatch || !state.losersMatch || !isPlayed(state.finalMatch) || !isPlayed(state.losersMatch)) {
-      throw new Error('Speel eerst beide finales')
+    if (!state.finalMatch || !isPlayed(state.finalMatch) || (state.losersMatch && !isPlayed(state.losersMatch))) {
+      throw new Error(state.losersMatch ? 'Speel eerst beide finales' : 'Speel eerst de finale')
     }
     state.phase = 'podium'
   },
   podium() {
-    return finalRanking(state.finalMatch, state.losersMatch)
+    return finalRanking(state.finalMatch, state.losersMatch, this.currentStandings())
   },
 
   teamById(id) {

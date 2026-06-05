@@ -3,15 +3,20 @@ import { makeTeams, roundRobin, standings, finalsPairings, finalRanking, isPlaye
 
 const seq = (...vals) => { let i = 0; return () => vals[i++ % vals.length] }
 
+const playerIds = n => Array.from({ length: n }, (_, i) => `p${i + 1}`)
+const teamIds = n => Array.from({ length: n }, (_, i) => String.fromCharCode(65 + i))
+
 describe('makeTeams', () => {
-  it('throws unless exactly 8 players', () => {
-    expect(() => makeTeams(['a', 'b'])).toThrow()
-    expect(() => makeTeams(Array.from({ length: 9 }, (_, i) => `p${i}`))).toThrow()
+  it('requires an even count between 4 and 16', () => {
+    expect(() => makeTeams(playerIds(2))).toThrow()
+    expect(() => makeTeams(playerIds(5))).toThrow()
+    expect(() => makeTeams(playerIds(9))).toThrow()
+    expect(() => makeTeams(playerIds(18))).toThrow()
   })
-  it('returns 4 pairs covering all 8 ids exactly once', () => {
-    const ids = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8']
+  it.each([4, 6, 8, 10, 16])('pairs %i players into teams of 2 covering everyone once', n => {
+    const ids = playerIds(n)
     const teams = makeTeams(ids)
-    expect(teams).toHaveLength(4)
+    expect(teams).toHaveLength(n / 2)
     expect(teams.every(t => t.length === 2)).toBe(true)
     expect(teams.flat().sort()).toEqual([...ids].sort())
   })
@@ -46,6 +51,29 @@ describe('roundRobin', () => {
       if (prev.includes(matches[i].teamA) || prev.includes(matches[i].teamB)) clashes++
     }
     expect(clashes).toBeLessThanOrEqual(2)
+  })
+})
+
+describe('roundRobin for any team count', () => {
+  it.each([2, 3, 5, 6, 7, 8])('covers every pairing exactly once for %i teams', n => {
+    const ids = teamIds(n)
+    const ms = roundRobin(ids)
+    expect(ms).toHaveLength((n * (n - 1)) / 2)
+    const keys = ms.map(m => [m.teamA, m.teamB].sort().join('-'))
+    expect(new Set(keys).size).toBe(ms.length)
+    for (const team of ids) {
+      expect(ms.filter(m => m.teamA === team || m.teamB === team)).toHaveLength(n - 1)
+    }
+    expect(new Set(ms.map(m => m.id)).size).toBe(ms.length)
+    expect(ms.every(m => !isPlayed(m))).toBe(true)
+  })
+  it.each([6, 8])('never schedules a team twice in a row for %i teams', n => {
+    const ms = roundRobin(teamIds(n))
+    for (let i = 1; i < ms.length; i++) {
+      const prev = [ms[i - 1].teamA, ms[i - 1].teamB]
+      expect(prev).not.toContain(ms[i].teamA)
+      expect(prev).not.toContain(ms[i].teamB)
+    }
   })
 })
 
@@ -84,16 +112,36 @@ describe('standings', () => {
 })
 
 describe('finals', () => {
-  it('pairs 1v2 and 3v4 from ranking', () => {
-    const ranked = [{ teamId: 'C' }, { teamId: 'A' }, { teamId: 'D' }, { teamId: 'B' }]
-    const { final, losersFinal } = finalsPairings(ranked)
+  const ranked4 = [{ teamId: 'C' }, { teamId: 'A' }, { teamId: 'D' }, { teamId: 'B' }]
+
+  it('pairs 1v2 and 3v4 from ranking when the losers final is on', () => {
+    const { final, losersFinal } = finalsPairings(ranked4, true)
     expect([final.teamA, final.teamB]).toEqual(['C', 'A'])
     expect([losersFinal.teamA, losersFinal.teamB]).toEqual(['D', 'B'])
     expect(isPlayed(final)).toBe(false)
   })
+  it('omits the losers final when toggled off', () => {
+    const { final, losersFinal } = finalsPairings(ranked4, false)
+    expect([final.teamA, final.teamB]).toEqual(['C', 'A'])
+    expect(losersFinal).toBeNull()
+  })
+  it('omits the losers final below 4 teams even when on', () => {
+    const { losersFinal } = finalsPairings(ranked4.slice(0, 3), true)
+    expect(losersFinal).toBeNull()
+  })
   it('produces podium order winner, runner-up, losers-final winner, last', () => {
     const fin = { teamA: 'C', teamB: 'A', winnerId: 'A', cupsLeft: 2 }
     const los = { teamA: 'D', teamB: 'B', winnerId: 'D', cupsLeft: 5 }
-    expect(finalRanking(fin, los)).toEqual(['A', 'C', 'D', 'B'])
+    expect(finalRanking(fin, los, ranked4)).toEqual(['A', 'C', 'D', 'B'])
+  })
+  it('falls back to group order behind the finalists without a losers final', () => {
+    const fin = { teamA: 'C', teamB: 'A', winnerId: 'A', cupsLeft: 2 }
+    expect(finalRanking(fin, null, ranked4)).toEqual(['A', 'C', 'D', 'B'])
+  })
+  it('appends teams beyond the top four in group order', () => {
+    const ranked6 = ['C', 'A', 'D', 'B', 'E', 'F'].map(teamId => ({ teamId }))
+    const fin = { teamA: 'C', teamB: 'A', winnerId: 'A', cupsLeft: 2 }
+    const los = { teamA: 'D', teamB: 'B', winnerId: 'B', cupsLeft: 1 }
+    expect(finalRanking(fin, los, ranked6)).toEqual(['A', 'C', 'B', 'D', 'E', 'F'])
   })
 })

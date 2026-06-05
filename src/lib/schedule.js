@@ -1,27 +1,60 @@
 // Pure tournament logic — no Vue, no side effects.
 
 export function makeTeams(playerIds, rand = Math.random) {
-  if (playerIds.length !== 8) throw new Error('Er zijn exact 8 spelers nodig')
+  const n = playerIds.length
+  if (n < 4 || n > 16 || n % 2 !== 0) {
+    throw new Error('Een even aantal spelers tussen 4 en 16 is nodig')
+  }
   const shuffled = [...playerIds]
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1))
     ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
   }
-  return [0, 2, 4, 6].map(i => [shuffled[i], shuffled[i + 1]])
+  return Array.from({ length: n / 2 }, (_, i) => [shuffled[2 * i], shuffled[2 * i + 1]])
 }
 
-// Fixed 6-match order for 4 teams: every pairing once. A complete 4-team
-// round-robin can't avoid back-to-back repeats entirely (provable minimum is
-// 2 clashes); this order hits that minimum (clashes only at matches 2->3 and 4->5).
+// Circle-method rounds for any team count (a null "bye" pads odd counts).
+function circleRounds(teamIds) {
+  const teams = [...teamIds]
+  if (teams.length % 2 === 1) teams.push(null)
+  const rounds = []
+  for (let r = 0; r < teams.length - 1; r++) {
+    const round = []
+    for (let i = 0; i < teams.length / 2; i++) {
+      const a = teams[i]
+      const b = teams[teams.length - 1 - i]
+      if (a !== null && b !== null) round.push([a, b])
+    }
+    rounds.push(round)
+    teams.splice(1, 0, teams.pop()) // rotate everyone but the first team
+  }
+  return rounds
+}
+
+const toMatches = pairs =>
+  pairs.map(([teamA, teamB], i) => ({ id: `g${i + 1}`, teamA, teamB, winnerId: null, cupsLeft: null }))
+
+// One-table round robin for 2–8 teams: every pairing once. The 4-team order is
+// hand-tuned (a complete 4-team round-robin provably can't avoid back-to-back
+// repeats; this order hits the minimum of 2). Other counts flatten circle-method
+// rounds with a boundary de-clash pass — for even counts ≥6 a disjoint match
+// always exists per round, so no team ever plays twice in a row; for odd counts
+// it's best effort (provably impossible at 3 teams).
 export function roundRobin(teamIds) {
-  const [a, b, c, d] = teamIds
-  return [[a, b], [c, d], [a, c], [b, d], [a, d], [b, c]].map(([teamA, teamB], i) => ({
-    id: `g${i + 1}`,
-    teamA,
-    teamB,
-    winnerId: null,
-    cupsLeft: null,
-  }))
+  if (teamIds.length === 4) {
+    const [a, b, c, d] = teamIds
+    return toMatches([[a, b], [c, d], [a, c], [b, d], [a, d], [b, c]])
+  }
+  const flat = []
+  for (const round of circleRounds(teamIds)) {
+    const prev = flat[flat.length - 1]
+    if (prev) {
+      const i = round.findIndex(pair => !pair.includes(prev[0]) && !pair.includes(prev[1]))
+      if (i > 0) round.unshift(...round.splice(i, 1))
+    }
+    flat.push(...round)
+  }
+  return toMatches(flat)
 }
 
 export function isPlayed(match) {
@@ -69,15 +102,20 @@ export function standings(teams, matches) {
     nameOf(x.teamId).localeCompare(nameOf(y.teamId), 'nl'))
 }
 
-export function finalsPairings(ranked) {
+export function finalsPairings(ranked, includeLosersFinal) {
   const ids = ranked.map(r => r.teamId)
   const fresh = (id, teamA, teamB) => ({ id, teamA, teamB, winnerId: null, cupsLeft: null })
   return {
     final: fresh('final', ids[0], ids[1]),
-    losersFinal: fresh('losers', ids[2], ids[3]),
+    losersFinal: includeLosersFinal && ids.length >= 4 ? fresh('losers', ids[2], ids[3]) : null,
   }
 }
 
-export function finalRanking(finalMatch, losersMatch) {
-  return [finalMatch.winnerId, loserOf(finalMatch), losersMatch.winnerId, loserOf(losersMatch)]
+// Full podium order: final winner/loser, then losers-final winner/loser when it
+// was played, then everyone else in group-standings order.
+export function finalRanking(finalMatch, losersMatch, ranked) {
+  const top = [finalMatch.winnerId, loserOf(finalMatch)]
+  if (losersMatch) top.push(losersMatch.winnerId, loserOf(losersMatch))
+  const placed = new Set(top)
+  return [...top, ...ranked.map(r => r.teamId).filter(id => !placed.has(id))]
 }

@@ -55,7 +55,7 @@ function start() {
   <section class="mx-auto flex min-h-dvh max-w-md flex-col px-4 pb-28 pt-8">
     <header class="mb-6">
       <h1 class="font-display text-4xl leading-none text-foam">De teams! 🎲</h1>
-      <p class="mt-2 font-sans text-foam/60">Vier teams, één winnaar. De bekers staan klaar.</p>
+      <p class="mt-2 font-sans text-foam/60">{{ teams.length }} teams, één winnaar. De bekers staan klaar.</p>
     </header>
 
     <div class="flex flex-col gap-5">

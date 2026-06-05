@@ -17,7 +17,7 @@ describe('mex store', () => {
     m.state.players = []
     // the store is a module singleton — reset settings mutated by earlier tests
     m.state.settings.baseSips = 2
-    m.state.settings.mexDoubles = true
+    m.state.settings.potPerMex = 0.5
   })
 
   function twoPlayers() {
@@ -49,6 +49,17 @@ describe('mex store', () => {
     expect(m.state.settings.baseSips).toBe(5)
     m.setBaseSips(0)
     expect(m.state.settings.baseSips).toBe(1)
+  })
+
+  it('clamps pot per Mex to quarter steps within ¼..1 adje', () => {
+    m.setPotPerMex(0.75)
+    expect(m.state.settings.potPerMex).toBe(0.75)
+    m.setPotPerMex(2)
+    expect(m.state.settings.potPerMex).toBe(1)
+    m.setPotPerMex(0)
+    expect(m.state.settings.potPerMex).toBe(0.25)
+    m.setPotPerMex(0.6)
+    expect(m.state.settings.potPerMex).toBe(0.5)
   })
 
   it('startGame builds round 1 with the first player as starter', () => {
@@ -100,45 +111,93 @@ describe('mex store', () => {
     m.throwDice(dieRand(6, 5)) // An 65
     m.stay()
     m.passTurn()
-    m.throwDice(dieRand(3, 1)) // Bert 31 — auto-commit (cap 1)
+    m.throwDice(dieRand(4, 1)) // Bert 41 — auto-commit (cap 1)
     m.passTurn()
     expect(m.state.phase).toBe('result')
     expect(m.state.lastResult.loserId).toBe(b)
     expect(m.state.lastResult.sips).toBe(2)
+    expect(m.state.lastResult.pot).toBe(0)
     expect(m.playerById(b).sips).toBe(2)
     expect(m.playerById(a).sips).toBe(0)
   })
 
-  it('every thrown Mex doubles the sips when enabled', () => {
-    const [, b] = twoPlayers()
+  it('every thrown Mex fills the pot; the loser drinks it as adjes', () => {
+    const [a, b] = twoPlayers()
+    m.startGame()
+    m.throwDice(dieRand(2, 1)) // An: MEX → +½ adje in the pot
+    m.stay()
+    m.passTurn()
+    m.throwDice(dieRand(4, 3)) // Bert 43 — auto-commit (cap 1)
+    m.passTurn()
+    expect(m.state.lastResult.loserId).toBe(b)
+    expect(m.state.lastResult.sips).toBe(2) // base sips unaffected
+    expect(m.state.lastResult.pot).toBe(0.5)
+    expect(m.playerById(b).sips).toBe(2)
+    expect(m.playerById(b).adjes).toBe(0.5)
+    expect(m.playerById(a).adjes).toBe(0)
+  })
+
+  it('pot amount per Mex is configurable', () => {
+    twoPlayers()
+    m.setPotPerMex(1)
     m.startGame()
     m.throwDice(dieRand(2, 1)) // MEX
     m.stay()
     m.passTurn()
-    m.throwDice(dieRand(3, 1))
+    m.throwDice(dieRand(4, 3))
     m.passTurn()
-    expect(m.state.lastResult.sips).toBe(4) // base 2 × 2^1
+    expect(m.state.lastResult.pot).toBe(1)
   })
 
-  it('Mex does not double when the setting is off', () => {
-    twoPlayers()
-    m.toggleMexDoubles()
+  it('rolling 31 gives the throw back: not counted, never stands', () => {
+    const [a] = twoPlayers()
     m.startGame()
-    m.throwDice(dieRand(2, 1))
+    m.throwDice(dieRand(3, 1)) // 31 — returned
+    expect(m.state.round.rolls[a].dice).toEqual([3, 1]) // dice stay visible
+    expect(m.state.round.rolls[a].throwsUsed).toBe(0)
+    expect(m.state.round.rolls[a].committed).toBe(false)
+    expect(() => m.stay()).toThrow() // a returned throw is no throw
+    m.throwDice(dieRand(1, 3)) // 31 again, in the other dice order — returned again
+    expect(m.state.round.rolls[a].throwsUsed).toBe(0)
+    m.throwDice(dieRand(6, 5)) // finally a real throw
+    expect(m.state.round.rolls[a].throwsUsed).toBe(1)
+    m.stay()
+    expect(m.state.round.maxThrows).toBe(1) // returned throws don't set the cap
+  })
+
+  it('a returned 31 on the table cannot be committed by staying', () => {
+    const [a] = twoPlayers()
+    m.startGame()
+    m.throwDice(dieRand(3, 5)) // 53 stands
+    m.toggleHold(0) // hold the 3
+    m.throwDice(dieRand(1)) // reroll die 1 → [3,1] = 31 → returned
+    expect(m.state.round.rolls[a].throwsUsed).toBe(1)
+    expect(() => m.stay()).toThrow(/31/)
+    m.throwDice(dieRand(6)) // reroll again → [3,6] = 63 stands
+    m.stay()
+    expect(m.state.round.rolls[a].committed).toBe(true)
+  })
+
+  it('31 does not fill the pot and is not a Mex', () => {
+    twoPlayers()
+    m.startGame()
+    m.throwDice(dieRand(3, 1)) // returned
+    m.throwDice(dieRand(6, 5))
     m.stay()
     m.passTurn()
-    m.throwDice(dieRand(3, 1))
+    m.throwDice(dieRand(4, 1))
     m.passTurn()
-    expect(m.state.lastResult.sips).toBe(2)
+    expect(m.state.lastResult.pot).toBe(0)
+    expect(m.state.lastResult.mexCount).toBe(0)
   })
 
   it('ties trigger a one-throw roll-off until a single loser remains', () => {
     const [a, b] = twoPlayers()
     m.startGame()
-    m.throwDice(dieRand(3, 1)) // An 31
+    m.throwDice(dieRand(3, 2)) // An 32
     m.stay()
     m.passTurn()
-    m.throwDice(dieRand(1, 3)) // Bert 31 — tie
+    m.throwDice(dieRand(2, 3)) // Bert 32 — tie
     m.passTurn()
     expect(m.state.phase).toBe('playing')
     expect(m.state.round.rolloffIds).toEqual([a, b])
@@ -156,7 +215,7 @@ describe('mex store', () => {
     m.throwDice(dieRand(6, 5))
     m.stay()
     m.passTurn()
-    m.throwDice(dieRand(3, 1))
+    m.throwDice(dieRand(4, 1))
     m.passTurn()
     m.nextRound()
     expect(m.state.phase).toBe('playing')
@@ -168,16 +227,18 @@ describe('mex store', () => {
   it('stopGame returns to lobby keeping tallies; newGame wipes them', () => {
     const [, b] = twoPlayers()
     m.startGame()
-    m.throwDice(dieRand(6, 5))
+    m.throwDice(dieRand(2, 1)) // MEX → pot ½
     m.stay()
     m.passTurn()
-    m.throwDice(dieRand(3, 1))
+    m.throwDice(dieRand(4, 1))
     m.passTurn()
     m.stopGame()
     expect(m.state.phase).toBe('lobby')
     expect(m.playerById(b).sips).toBe(2)
+    expect(m.playerById(b).adjes).toBe(0.5)
     m.newGame()
     expect(m.playerById(b).sips).toBe(0)
+    expect(m.playerById(b).adjes).toBe(0)
   })
 
   it('persists to localStorage on the next tick', async () => {

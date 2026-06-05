@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { rollDie, scoreRoll, lowestOf, sipsFor, MEX_RANK } from './mex.js'
+import { rollDie, scoreRoll, lowestOf, formatAdjes, MEX_RANK } from './mex.js'
 
 describe('rollDie', () => {
   it('maps the unit interval onto 1..6', () => {
@@ -39,13 +39,17 @@ describe('lowestOf', () => {
   })
 })
 
-describe('sipsFor', () => {
-  it('doubles per Mex when enabled', () => {
-    expect(sipsFor(2, 0, true)).toBe(2)
-    expect(sipsFor(2, 1, true)).toBe(4)
-    expect(sipsFor(2, 3, true)).toBe(16)
+describe('formatAdjes', () => {
+  it('renders quarter fractions with unicode symbols', () => {
+    expect(formatAdjes(0.25)).toBe('¼')
+    expect(formatAdjes(0.5)).toBe('½')
+    expect(formatAdjes(0.75)).toBe('¾')
   })
-  it('ignores Mex count when disabled', () => {
-    expect(sipsFor(3, 2, false)).toBe(3)
+  it('renders whole and mixed amounts', () => {
+    expect(formatAdjes(0)).toBe('0')
+    expect(formatAdjes(1)).toBe('1')
+    expect(formatAdjes(1.5)).toBe('1½')
+    expect(formatAdjes(2.25)).toBe('2¼')
   })
 })
+

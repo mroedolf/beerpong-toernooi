@@ -19,6 +19,26 @@ turn-based rounds, and a running sips tally ("schandebord").
 3. Multi-page build in the same repo (`/mex.html`) — splits bundle and navigation for
    no real gain at this size. Rejected.
 
+## Amendment 2026-06-05 — huisregels v2 (user-specified)
+
+User-requested extra rules, replacing the provisional "Mex verdubbelt" toggle:
+
+1. **Mex → pot**: every thrown Mex (roll-offs included) adds a configurable amount to
+   *de pot* — ¼, ½ (default), ¾ or 1 **adje** per Mex, set in the lobby. The round's
+   loser drinks the pot on top of the base slokken; the pot then empties. Players get
+   an `adjes` tally next to `sips` on the schandebord.
+2. **Dubbels uitdelen**: a double d-d still scores as honderdtal AND the thrower may
+   deal out d slokken. The app announces ("Deel d slokken uit 🍻"); recipients are
+   chosen at the table, not tracked.
+3. **31 → worp terug**: rolling 31 means the thrower deals 1 slok and gets the throw
+   back — automatic: announced, `throwsUsed` not incremented, the roll never stands
+   (so 31 can't be a final score and can't set the starter's cap). Applies in
+   roll-offs too.
+
+Storage key bumps to `beerpong:mex:v2` (settings schema changed; shallow merge of v1
+state would leave `potPerMex` undefined). `toggleMexDoubles`/`mexDoubles` are removed;
+`setPotPerMex` added. New pure helper `formatAdjes` renders ¼/½/¾ fractions.
+
 ## Rules implemented (classic Mexico; shown in an in-app info panel)
 
 - Two dice per throw. Score ranking, high → low:

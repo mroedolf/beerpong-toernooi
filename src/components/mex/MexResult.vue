@@ -2,12 +2,15 @@
 import { computed } from 'vue'
 import { useMex } from '../../store/mex.js'
 import { toast } from '../../store/toast.js'
+import { formatAdjes } from '../../lib/mex.js'
 
 const m = useMex()
 
 const result = computed(() => m.state.lastResult)
 const loser = computed(() => m.playerById(result.value.loserId))
-const tally = computed(() => [...m.state.players].sort((x, y) => y.sips - x.sips))
+const tally = computed(() =>
+  [...m.state.players].sort((x, y) => y.adjes - x.adjes || y.sips - x.sips),
+)
 
 function act(fn) {
   try {
@@ -23,9 +26,11 @@ function act(fn) {
     <header class="text-center pour-in">
       <p class="text-sm font-semibold uppercase tracking-widest text-foam/50">Ronde gespeeld</p>
       <h2 class="font-display text-4xl text-cup leading-tight">{{ loser.name }} drinkt!</h2>
-      <p class="font-display text-2xl text-beer mt-1">{{ result.sips }} slokken 🍺</p>
+      <p class="font-display text-2xl text-beer mt-1">
+        {{ result.sips }} slokken<template v-if="result.pot > 0"> + {{ formatAdjes(result.pot) }} adje uit de pot</template> 🍺
+      </p>
       <p v-if="result.mexCount > 0" class="text-xs text-foam/60 mt-1">
-        {{ result.mexCount }}× Mex gegooid — slokken ×{{ 2 ** result.mexCount }}
+        {{ result.mexCount }}× Mex gegooid deze ronde 🍯
       </p>
     </header>
 
@@ -51,7 +56,9 @@ function act(fn) {
       <ul class="space-y-1">
         <li v-for="p in tally" :key="p.id" class="flex justify-between text-sm">
           <span>{{ p.name }}</span>
-          <span class="font-display text-beer">{{ p.sips }}</span>
+          <span class="font-display text-beer">
+            {{ p.sips }} 🍺<template v-if="p.adjes > 0"> · {{ formatAdjes(p.adjes) }} adje</template>
+          </span>
         </li>
       </ul>
     </div>

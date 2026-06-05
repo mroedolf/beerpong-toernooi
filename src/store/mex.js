@@ -1,13 +1,13 @@
 import { reactive, watch } from 'vue'
-import { rollDie, scoreRoll, lowestOf, sipsFor } from '../lib/mex.js'
+import { rollDie, scoreRoll, lowestOf } from '../lib/mex.js'
 
-export const MEX_STORAGE_KEY = 'beerpong:mex:v1'
+export const MEX_STORAGE_KEY = 'beerpong:mex:v2'
 
 function freshState() {
   return {
     phase: 'lobby', // lobby | playing | result
-    players: [],    // { id, name, sips }
-    settings: { baseSips: 2, mexDoubles: true },
+    players: [],    // { id, name, sips, adjes }
+    settings: { baseSips: 2, potPerMex: 0.5 }, // potPerMex in adjes per thrown Mex
     round: null,
     lastResult: null,
   }
@@ -78,7 +78,7 @@ const actions = {
     if (state.phase !== 'lobby') throw new Error('Spelers wijzigen kan alleen in de lobby')
     const trimmed = name.trim()
     if (!trimmed) throw new Error('Geef een naam op')
-    const player = { id: crypto.randomUUID(), name: trimmed, sips: 0 }
+    const player = { id: crypto.randomUUID(), name: trimmed, sips: 0, adjes: 0 }
     state.players.push(player)
     return player
   },
@@ -99,8 +99,9 @@ const actions = {
   setBaseSips(n) {
     state.settings.baseSips = Math.min(5, Math.max(1, Math.round(n)))
   },
-  toggleMexDoubles() {
-    state.settings.mexDoubles = !state.settings.mexDoubles
+  setPotPerMex(amount) {
+    // quarter-adje steps between ¼ and 1
+    state.settings.potPerMex = Math.min(1, Math.max(0.25, Math.round(amount * 4) / 4))
   },
 
   startGame() {
@@ -117,8 +118,13 @@ const actions = {
     for (const i of [0, 1]) {
       if (!roll.held[i]) roll.dice[i] = rollDie(rand)
     }
+    const score = scoreRoll(roll.dice[0], roll.dice[1])
+    if (score.rank === 31) {
+      // Huisregel: 31 = deel 1 slok uit en krijg de worp terug — the throw never stands.
+      return
+    }
     roll.throwsUsed += 1
-    if (scoreRoll(roll.dice[0], roll.dice[1]).isMex) state.round.mexCount += 1
+    if (score.isMex) state.round.mexCount += 1
     if (roll.throwsUsed >= throwCap()) this._commit()
   },
 
@@ -140,6 +146,8 @@ const actions = {
     const roll = currentRoll()
     if (roll.throwsUsed === 0) throw new Error('Eerst gooien')
     if (roll.committed) throw new Error('Worp ligt al vast')
+    // A returned 31 can be on the table (hold + reroll into 31) — it never stands.
+    if (scoreRoll(roll.dice[0], roll.dice[1]).rank === 31) throw new Error('31 staat niet — gooi opnieuw')
     this._commit()
   },
 
@@ -180,15 +188,18 @@ const actions = {
 
   _finishRound(loserId) {
     const round = state.round
-    const sips = sipsFor(state.settings.baseSips, round.mexCount, state.settings.mexDoubles)
-    this.playerById(loserId).sips += sips
+    const sips = state.settings.baseSips
+    const pot = round.mexCount * state.settings.potPerMex
+    const loser = this.playerById(loserId)
+    loser.sips += sips
+    loser.adjes += pot
     const ranking = round.order
       .map(id => {
         const roll = round.rolls[id]
         return { id, ...scoreRoll(roll.dice[0], roll.dice[1]) }
       })
       .sort((x, y) => (x.id === loserId) - (y.id === loserId) || y.rank - x.rank)
-    state.lastResult = { loserId, sips, mexCount: round.mexCount, ranking }
+    state.lastResult = { loserId, sips, pot, mexCount: round.mexCount, ranking }
     state.phase = 'result'
   },
 
@@ -206,7 +217,10 @@ const actions = {
   },
 
   newGame() {
-    for (const p of state.players) p.sips = 0
+    for (const p of state.players) {
+      p.sips = 0
+      p.adjes = 0
+    }
     this.stopGame()
   },
 

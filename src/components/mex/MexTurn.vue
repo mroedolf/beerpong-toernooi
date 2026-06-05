@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useMex } from '../../store/mex.js'
-import { scoreRoll } from '../../lib/mex.js'
+import { scoreRoll, formatAdjes } from '../../lib/mex.js'
 import { toast } from '../../store/toast.js'
 import MexDie from './MexDie.vue'
 
@@ -14,12 +14,16 @@ const currentId = computed(() => activeIds.value[round.value.turnIndex])
 const player = computed(() => m.playerById(currentId.value))
 const roll = computed(() => round.value.rolls[currentId.value])
 const cap = computed(() => (inRolloff.value ? 1 : round.value.maxThrows))
+// Score of the dice on the table — a returned 31 leaves throwsUsed at 0 but the
+// dice visible, so derive from dice presence rather than the throw counter.
 const score = computed(() =>
-  roll.value.throwsUsed > 0 ? scoreRoll(roll.value.dice[0], roll.value.dice[1]) : null,
+  roll.value.dice[0] !== null ? scoreRoll(roll.value.dice[0], roll.value.dice[1]) : null,
 )
+const isReturned31 = computed(() => score.value?.rank === 31)
+const potAdjes = computed(() => round.value.mexCount * m.state.settings.potPerMex)
 const isLastThrower = computed(() => round.value.turnIndex === activeIds.value.length - 1)
 const canThrow = computed(() => !roll.value.committed && roll.value.throwsUsed < cap.value)
-const canStay = computed(() => !roll.value.committed && roll.value.throwsUsed >= 1)
+const canStay = computed(() => !roll.value.committed && roll.value.throwsUsed >= 1 && !isReturned31.value)
 const canHold = computed(() =>
   !inRolloff.value && !roll.value.committed && roll.value.throwsUsed >= 1 && roll.value.throwsUsed < cap.value,
 )
@@ -51,10 +55,25 @@ function act(fn) {
       </p>
     </header>
 
+    <p v-if="potAdjes > 0" class="text-center text-sm font-display text-beer">
+      🍯 In de pot: {{ formatAdjes(potAdjes) }} adje
+    </p>
+
     <!-- MEX stamp -->
-    <div v-if="score?.isMex" class="mex-stamp text-center" role="status">
-      <span class="font-display text-6xl text-cup drop-shadow-[4px_4px_0_rgba(0,0,0,.6)]">MEX!!!</span>
+    <div v-if="score?.isMex" class="mex-stamp text-center space-y-1" role="status">
+      <span class="font-display text-6xl text-cup drop-shadow-[4px_4px_0_rgba(0,0,0,.6)] block">MEX!!!</span>
+      <span class="text-sm text-foam/80 block">+{{ formatAdjes(m.state.settings.potPerMex) }} adje in de pot</span>
     </div>
+
+    <!-- Dubbel: uitdelen -->
+    <p v-if="score?.isDouble" class="mex-stamp text-center font-display text-xl text-beer" role="status">
+      Dubbel! Deel {{ roll.dice[0] }} slokken uit 🍻
+    </p>
+
+    <!-- 31: worp terug -->
+    <p v-if="isReturned31" class="mex-stamp text-center font-display text-xl text-beer" role="status">
+      31! Deel 1 slok uit en gooi opnieuw 🍀
+    </p>
 
     <div class="flex items-center justify-center gap-6">
       <MexDie
@@ -68,7 +87,7 @@ function act(fn) {
       />
     </div>
 
-    <p v-if="score && !score.isMex" class="text-center font-display text-5xl text-beer">
+    <p v-if="score && !score.isMex && !isReturned31" class="text-center font-display text-5xl text-beer">
       {{ score.label }}
     </p>
     <p v-if="canHold" class="text-center text-xs text-foam/50">

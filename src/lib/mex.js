@@ -25,6 +25,12 @@ export function lowestOf(entries) {
   return entries.filter(e => e.rank === min).map(e => e.id)
 }
 
-export function sipsFor(baseSips, mexCount, mexDoubles) {
-  return mexDoubles ? baseSips * 2 ** mexCount : baseSips
+// Render adje amounts in quarter steps: 0.5 → "½", 1.5 → "1½".
+const QUARTER_SYMBOLS = { 0.25: '¼', 0.5: '½', 0.75: '¾' }
+
+export function formatAdjes(amount) {
+  const whole = Math.floor(amount)
+  const fraction = QUARTER_SYMBOLS[Math.round((amount - whole) * 4) / 4] ?? ''
+  if (whole === 0) return fraction || '0'
+  return `${whole}${fraction}`
 }

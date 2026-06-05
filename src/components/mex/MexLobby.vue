@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useMex } from '../../store/mex.js'
 import { useTournament } from '../../store/tournament.js'
 import { toast } from '../../store/toast.js'
+import { formatAdjes } from '../../lib/mex.js'
 
 const m = useMex()
 const t = useTournament()
@@ -13,7 +14,7 @@ const canImport = computed(() =>
   t.state.players.some(p => !m.state.players.find(mp => mp.name === p.name)),
 )
 const canStart = computed(() => m.state.players.length >= 2)
-const hasSips = computed(() => m.state.players.some(p => p.sips > 0))
+const hasSips = computed(() => m.state.players.some(p => p.sips > 0 || p.adjes > 0))
 
 function act(fn) {
   try {
@@ -74,7 +75,9 @@ function add() {
         :class="i % 2 ? 'rotate-[1.2deg]' : '-rotate-1'"
       >
         <span class="flex-1 font-semibold">{{ p.name }}</span>
-        <span v-if="p.sips > 0" class="font-display text-beer text-sm">{{ p.sips }} 🍺</span>
+        <span v-if="p.sips > 0 || p.adjes > 0" class="font-display text-beer text-sm">
+          {{ p.sips }} 🍺<template v-if="p.adjes > 0"> · {{ formatAdjes(p.adjes) }} adje</template>
+        </span>
         <button
           class="size-9 grid place-items-center rounded-lg text-foam/60 hover:text-cup focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
           aria-label="Speler verwijderen"
@@ -104,26 +107,36 @@ function add() {
           >+</button>
         </div>
       </div>
-      <label class="flex items-center justify-between gap-3 cursor-pointer">
-        <span class="text-sm font-semibold">Mex verdubbelt de slokken</span>
-        <input
-          type="checkbox"
-          :checked="m.state.settings.mexDoubles"
-          class="size-6 accent-cup"
-          @change="m.toggleMexDoubles()"
-        />
-      </label>
+      <div class="flex items-center justify-between gap-3">
+        <span class="text-sm font-semibold">Per Mex in de pot</span>
+        <div class="flex items-center gap-3">
+          <button
+            class="size-10 rounded-lg font-display text-xl bg-night border-2 border-line disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
+            :disabled="m.state.settings.potPerMex <= 0.25"
+            aria-label="Minder in de pot"
+            @click="m.setPotPerMex(m.state.settings.potPerMex - 0.25)"
+          >−</button>
+          <span class="font-display text-2xl text-beer w-14 text-center">{{ formatAdjes(m.state.settings.potPerMex) }} adje</span>
+          <button
+            class="size-10 rounded-lg font-display text-xl bg-night border-2 border-line disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
+            :disabled="m.state.settings.potPerMex >= 1"
+            aria-label="Meer in de pot"
+            @click="m.setPotPerMex(m.state.settings.potPerMex + 0.25)"
+          >+</button>
+        </div>
+      </div>
     </fieldset>
 
     <details class="rounded-2xl border-2 border-line bg-night-soft p-4">
       <summary class="font-display text-beer cursor-pointer">Hoe werkt het? 🤔</summary>
       <ul class="mt-3 space-y-2 text-sm text-foam/80 list-disc pl-4">
-        <li><strong>Mex</strong> (2 en 1) is de hoogste worp.</li>
-        <li>Dubbels zijn honderdtallen (6-6 = 600 … 1-1 = 100) en kloppen alle gewone worpen.</li>
-        <li>Gewone worpen: hoogste steen ×10 + laagste (65 is top, 31 is bagger).</li>
+        <li><strong>Mex</strong> (2 en 1) is de hoogste worp én gooit {{ formatAdjes(m.state.settings.potPerMex) }} adje in de pot.</li>
+        <li>Dubbels zijn honderdtallen (6-6 = 600 … 1-1 = 100), kloppen alle gewone worpen, en je mag dat cijfer als slokken uitdelen.</li>
+        <li>Gewone worpen: hoogste steen ×10 + laagste (65 is top, 32 is bagger).</li>
+        <li>Gooi je <strong>31</strong>? Deel 1 slok uit en je krijgt de worp terug.</li>
         <li>De voorgooier gooit max 3 keer en bepaalt zo hoe vaak de rest mag gooien.</li>
         <li>Je mag één dobbelsteen vasthouden tussen worpen.</li>
-        <li>Laagste worp van de ronde drinkt. Elke gegooide Mex verdubbelt de slokken (als die huisregel aanstaat).</li>
+        <li>Laagste worp van de ronde drinkt de basis-slokken plus de pot.</li>
         <li>Gelijkstand onderaan? Roll-off: één worp, verliezer drinkt.</li>
         <li>De verliezer mag de volgende ronde voorgooien.</li>
       </ul>

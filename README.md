@@ -21,6 +21,11 @@ Drankspelletjes-site voor feestjes — kies je spel op de landingspagina.
 - Dubbels: dat cijfer uitdelen als slokken · 31: deel 1 slok uit, worp terug
 - Schandebord houdt slokken en adjes bij
 
+### 🃏 Circle of Death
+- 2+ spelers, om de beurt een kaart trekken; elke kaart heeft een drinkregel
+- Klassieke regels (A = waterval … K = koningsbeker), in de app na te lezen
+- De vierde koning drinkt de koningsbeker leeg — einde spel
+
 ## Lokaal draaien
 
 ```bash

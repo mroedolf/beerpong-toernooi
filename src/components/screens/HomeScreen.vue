@@ -4,10 +4,12 @@ import { GAMES } from '../../games.js'
 import { navigate } from '../../lib/router.js'
 import { useTournament } from '../../store/tournament.js'
 import { useMex } from '../../store/mex.js'
+import { useCod } from '../../store/cod.js'
 import { isPlayed } from '../../lib/schedule.js'
 
 const t = useTournament()
 const m = useMex()
+const c = useCod()
 
 const beerpongStatus = computed(() => {
   switch (t.state.phase) {
@@ -29,7 +31,15 @@ const mexStatus = computed(() => {
   return m.state.players.length > 0 ? `${m.state.players.length} spelers klaar` : null
 })
 
-const statusFor = { beerpong: beerpongStatus, mex: mexStatus }
+const codStatus = computed(() => {
+  if (c.state.phase === 'finished') return 'Koningsbeker gedronken 💀'
+  if (c.state.phase === 'playing') {
+    return `${52 - c.state.deck.length}/52 kaarten · ${c.state.kingsDrawn}/4 koningen`
+  }
+  return c.state.players.length > 0 ? `${c.state.players.length} spelers klaar` : null
+})
+
+const statusFor = { beerpong: beerpongStatus, mex: mexStatus, cod: codStatus }
 </script>
 
 <template>

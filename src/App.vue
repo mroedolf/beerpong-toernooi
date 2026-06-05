@@ -5,6 +5,7 @@ import ToastHost from './components/ToastHost.vue'
 import HomeScreen from './components/screens/HomeScreen.vue'
 import BeerpongGame from './components/screens/BeerpongGame.vue'
 import MexScreen from './components/screens/MexScreen.vue'
+import CodScreen from './components/screens/CodScreen.vue'
 
 const { path, navigate } = useRoute()
 
@@ -12,6 +13,7 @@ const routes = {
   '/': HomeScreen,
   '/beerpong': BeerpongGame,
   '/mex': MexScreen,
+  '/circle': CodScreen,
 }
 const current = computed(() => routes[path.value] ?? HomeScreen)
 const atHome = computed(() => current.value === HomeScreen)

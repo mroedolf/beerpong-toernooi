@@ -16,4 +16,12 @@ export const GAMES = [
     tagline: 'Laagste worp drinkt. En de pot loert.',
     players: '2+ spelers',
   },
+  {
+    id: 'cod',
+    path: '/circle',
+    emoji: '🃏',
+    name: 'Circle of Death',
+    tagline: 'Trek een kaart, vrees de koning.',
+    players: '2+ spelers',
+  },
 ]

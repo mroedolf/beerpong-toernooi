@@ -1,0 +1,152 @@
+<script setup>
+import { ref, computed } from 'vue'
+import { useMex } from '../../store/mex.js'
+import { useTournament } from '../../store/tournament.js'
+import { toast } from '../../store/toast.js'
+
+const m = useMex()
+const t = useTournament()
+
+const newName = ref('')
+const canImport = computed(() =>
+  t.state.players.length > 0 &&
+  t.state.players.some(p => !m.state.players.find(mp => mp.name === p.name)),
+)
+const canStart = computed(() => m.state.players.length >= 2)
+const hasSips = computed(() => m.state.players.some(p => p.sips > 0))
+
+function act(fn) {
+  try {
+    fn()
+  } catch (e) {
+    toast(e.message)
+  }
+}
+
+function resetTallies() {
+  if (confirm('Alle slokkentellers op nul?')) act(() => m.newGame())
+}
+
+function add() {
+  try {
+    m.addPlayer(newName.value)
+    newName.value = ''
+  } catch (e) {
+    toast(e.message)
+  }
+}
+</script>
+
+<template>
+  <section class="pt-6 space-y-6">
+    <header class="pour-in">
+      <h2 class="font-display text-3xl text-beer">Mex 🎲</h2>
+      <p class="text-sm text-foam/60">Laagste worp drinkt. Zo simpel is het leven.</p>
+    </header>
+
+    <form class="flex gap-2" @submit.prevent="add">
+      <input
+        v-model="newName"
+        type="text"
+        placeholder="Naam van de speler"
+        class="flex-1 min-h-12 rounded-xl bg-night-soft border-2 border-line px-4 text-foam placeholder:text-foam/40 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
+      />
+      <button
+        type="submit"
+        class="min-h-12 px-5 rounded-xl font-display text-2xl bg-cup text-foam border-b-4 border-cup-dark active:translate-y-0.5 active:border-b-2 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
+        aria-label="Speler toevoegen"
+      >+</button>
+    </form>
+
+    <button
+      v-if="canImport"
+      class="w-full min-h-12 rounded-xl font-display bg-night-soft text-beer border-2 border-line active:translate-y-0.5 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
+      @click="act(() => m.importPlayers(t.state.players.map(p => p.name)))"
+    >
+      Neem toernooispelers over 🍺
+    </button>
+
+    <ul v-if="m.state.players.length" class="space-y-2">
+      <li
+        v-for="(p, i) in m.state.players"
+        :key="p.id"
+        class="flex items-center gap-3 rounded-2xl border-2 border-line bg-night-soft px-4 py-3 shadow-[4px_4px_0_rgba(0,0,0,.55)]"
+        :class="i % 2 ? 'rotate-[1.2deg]' : '-rotate-1'"
+      >
+        <span class="flex-1 font-semibold">{{ p.name }}</span>
+        <span v-if="p.sips > 0" class="font-display text-beer text-sm">{{ p.sips }} 🍺</span>
+        <button
+          class="size-9 grid place-items-center rounded-lg text-foam/60 hover:text-cup focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
+          aria-label="Speler verwijderen"
+          @click="act(() => m.removePlayer(p.id))"
+        >✕</button>
+      </li>
+    </ul>
+    <p v-else class="text-center text-sm text-foam/50">Nog niemand. Wie durft? 🎲</p>
+
+    <fieldset class="rounded-2xl border-2 border-line bg-night-soft p-4 space-y-4">
+      <legend class="font-display text-beer px-2">Huisregels</legend>
+      <div class="flex items-center justify-between gap-3">
+        <span class="text-sm font-semibold">Basis slokken</span>
+        <div class="flex items-center gap-3">
+          <button
+            class="size-10 rounded-lg font-display text-xl bg-night border-2 border-line disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
+            :disabled="m.state.settings.baseSips <= 1"
+            aria-label="Minder slokken"
+            @click="m.setBaseSips(m.state.settings.baseSips - 1)"
+          >−</button>
+          <span class="font-display text-2xl text-beer w-6 text-center">{{ m.state.settings.baseSips }}</span>
+          <button
+            class="size-10 rounded-lg font-display text-xl bg-night border-2 border-line disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
+            :disabled="m.state.settings.baseSips >= 5"
+            aria-label="Meer slokken"
+            @click="m.setBaseSips(m.state.settings.baseSips + 1)"
+          >+</button>
+        </div>
+      </div>
+      <label class="flex items-center justify-between gap-3 cursor-pointer">
+        <span class="text-sm font-semibold">Mex verdubbelt de slokken</span>
+        <input
+          type="checkbox"
+          :checked="m.state.settings.mexDoubles"
+          class="size-6 accent-cup"
+          @change="m.toggleMexDoubles()"
+        />
+      </label>
+    </fieldset>
+
+    <details class="rounded-2xl border-2 border-line bg-night-soft p-4">
+      <summary class="font-display text-beer cursor-pointer">Hoe werkt het? 🤔</summary>
+      <ul class="mt-3 space-y-2 text-sm text-foam/80 list-disc pl-4">
+        <li><strong>Mex</strong> (2 en 1) is de hoogste worp.</li>
+        <li>Dubbels zijn honderdtallen (6-6 = 600 … 1-1 = 100) en kloppen alle gewone worpen.</li>
+        <li>Gewone worpen: hoogste steen ×10 + laagste (65 is top, 31 is bagger).</li>
+        <li>De voorgooier gooit max 3 keer en bepaalt zo hoe vaak de rest mag gooien.</li>
+        <li>Je mag één dobbelsteen vasthouden tussen worpen.</li>
+        <li>Laagste worp van de ronde drinkt. Elke gegooide Mex verdubbelt de slokken.</li>
+        <li>Gelijkstand onderaan? Roll-off: één worp, verliezer drinkt.</li>
+        <li>De verliezer mag de volgende ronde voorgooien.</li>
+      </ul>
+    </details>
+
+    <div class="space-y-2">
+      <button
+        class="w-full min-h-14 rounded-xl font-display text-2xl bg-cup text-foam border-b-4 border-cup-dark active:translate-y-0.5 active:border-b-2 disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
+        :disabled="!canStart"
+        @click="act(() => m.startGame())"
+      >
+        Gooi de eerste ronde →
+      </button>
+      <p v-if="!canStart" class="text-center text-xs text-foam/50">
+        Minstens 2 spelers nodig — nodig nog {{ 2 - m.state.players.length }} iemand uit.
+      </p>
+      <button
+        v-if="hasSips"
+        class="w-full min-h-12 rounded-xl font-display bg-night-soft text-foam/70 border-2 border-line active:translate-y-0.5 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
+        @click="resetTallies"
+      >
+        Nieuw spel (tellers op nul)
+      </button>
+    </div>
+  </section>
+</template>

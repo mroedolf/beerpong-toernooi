@@ -14,13 +14,21 @@ function freshState() {
   }
 }
 
+// Downgrade structurally impossible stored states (tampered/corrupt storage)
+// to a fresh lobby instead of letting the UI crash on them.
+export function sanitizeState(parsed) {
+  const active = ['playing', 'finished'].includes(parsed.phase)
+  if (active && (!Array.isArray(parsed.players) || parsed.players.length < 2)) return freshState()
+  return { ...freshState(), ...parsed }
+}
+
 function load() {
   try {
     const raw = localStorage.getItem(COD_STORAGE_KEY)
     if (!raw) return freshState()
     const parsed = JSON.parse(raw)
     if (!['lobby', 'playing', 'finished'].includes(parsed.phase)) return freshState()
-    return { ...freshState(), ...parsed }
+    return sanitizeState(parsed)
   } catch {
     return freshState()
   }

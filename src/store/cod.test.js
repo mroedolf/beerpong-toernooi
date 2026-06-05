@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { nextTick } from 'vue'
-import { useCod, COD_STORAGE_KEY } from './cod.js'
+import { useCod, sanitizeState, COD_STORAGE_KEY } from './cod.js'
 
 // rand that deals the deck unshuffled (Fisher-Yates with j === i keeps order)
 const identityRand = () => 0.9999999
@@ -108,6 +108,21 @@ describe('circle of death store', () => {
     c.startGame()
     expect(() => c.addPlayer('Cas')).toThrow()
     expect(() => c.removePlayer(c.state.players[0].id)).toThrow()
+  })
+
+  it('sanitizeState downgrades structurally impossible stored states to a fresh lobby', () => {
+    expect(sanitizeState({ phase: 'playing', players: [] }).phase).toBe('lobby')
+    expect(sanitizeState({ phase: 'finished', players: [{ id: 'x', name: 'X' }] }).phase).toBe('lobby')
+    const valid = sanitizeState({
+      phase: 'playing',
+      players: [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }],
+      deck: [{ rank: '3', suit: '♠' }],
+      kingsDrawn: 1,
+      turnIndex: 1,
+      current: null,
+    })
+    expect(valid.phase).toBe('playing')
+    expect(valid.kingsDrawn).toBe(1)
   })
 
   it('persists to localStorage on the next tick', async () => {

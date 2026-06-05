@@ -22,6 +22,13 @@ function act(fn) {
   }
 }
 
+// A second tap in the same tick as the fourth king would toast a confusing
+// error right before the finish screen swaps in — ignore it silently.
+function draw() {
+  if (c.state.phase !== 'playing') return
+  act(() => c.drawCard())
+}
+
 function stop() {
   if (confirm('Spel stoppen en terug naar de lobby?')) act(() => c.stopGame())
 }
@@ -88,7 +95,7 @@ function stop() {
     <div class="space-y-3">
       <button
         class="w-full min-h-14 rounded-xl font-display text-2xl bg-cup text-foam border-b-4 border-cup-dark active:translate-y-0.5 active:border-b-2 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
-        @click="act(() => c.drawCard())"
+        @click="draw"
       >
         Trek een kaart 🃏
       </button>

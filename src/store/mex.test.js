@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { nextTick } from 'vue'
-import { useMex, MEX_STORAGE_KEY } from './mex.js'
+import { useMex, sanitizeState, MEX_STORAGE_KEY } from './mex.js'
 
 // rand factory that yields dice faces in order: dieRand(6,5,3,1) -> first throw [6,5], next [3,1]
 const dieRand = (...faces) => {
@@ -245,5 +245,17 @@ describe('mex store', () => {
     twoPlayers()
     await nextTick()
     expect(JSON.parse(localStorage.getItem(MEX_STORAGE_KEY)).players).toHaveLength(2)
+  })
+
+  it('sanitizeState downgrades structurally impossible stored states to a fresh lobby', () => {
+    expect(sanitizeState({ phase: 'playing', players: [], round: null }).phase).toBe('lobby')
+    expect(sanitizeState({ phase: 'result', players: [{ id: 'a' }, { id: 'b' }], round: {}, lastResult: null }).phase).toBe('lobby')
+    const valid = sanitizeState({
+      phase: 'lobby',
+      players: [],
+      settings: { baseSips: 3, potPerMex: 0.25 },
+    })
+    expect(valid.phase).toBe('lobby')
+    expect(valid.settings.baseSips).toBe(3)
   })
 })

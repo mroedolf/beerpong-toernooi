@@ -89,7 +89,11 @@ const actions = {
   importPlayers(names) {
     const existing = new Set(state.players.map(p => p.name))
     for (const name of names) {
-      if (!existing.has(name.trim()) && name.trim()) this.addPlayer(name)
+      const trimmed = name.trim()
+      if (trimmed && !existing.has(trimmed)) {
+        this.addPlayer(name)
+        existing.add(trimmed)
+      }
     }
   },
   setBaseSips(n) {

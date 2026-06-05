@@ -123,7 +123,7 @@ function add() {
         <li>Gewone worpen: hoogste steen ×10 + laagste (65 is top, 31 is bagger).</li>
         <li>De voorgooier gooit max 3 keer en bepaalt zo hoe vaak de rest mag gooien.</li>
         <li>Je mag één dobbelsteen vasthouden tussen worpen.</li>
-        <li>Laagste worp van de ronde drinkt. Elke gegooide Mex verdubbelt de slokken.</li>
+        <li>Laagste worp van de ronde drinkt. Elke gegooide Mex verdubbelt de slokken (als die huisregel aanstaat).</li>
         <li>Gelijkstand onderaan? Roll-off: één worp, verliezer drinkt.</li>
         <li>De verliezer mag de volgende ronde voorgooien.</li>
       </ul>

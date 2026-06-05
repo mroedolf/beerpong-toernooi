@@ -3,7 +3,11 @@ import { toasts } from '../store/toast.js'
 </script>
 
 <template>
-  <div class="fixed bottom-4 inset-x-0 z-50 flex flex-col items-center gap-2 px-4 pointer-events-none">
+  <div
+    class="fixed bottom-4 inset-x-0 z-50 flex flex-col items-center gap-2 px-4 pointer-events-none"
+    role="status"
+    aria-live="polite"
+  >
     <TransitionGroup name="toast">
       <div
         v-for="toastItem in toasts"

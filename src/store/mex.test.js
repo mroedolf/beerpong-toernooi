@@ -39,6 +39,11 @@ describe('mex store', () => {
     expect(m.state.players.map(p => p.name)).toEqual(['An', 'Bert', 'Cas'])
   })
 
+  it('deduplicates names within the imported list itself', () => {
+    m.importPlayers(['  An  ', '   ', 'Bert', 'An'])
+    expect(m.state.players.map(p => p.name)).toEqual(['An', 'Bert'])
+  })
+
   it('clamps base sips to 1..5', () => {
     m.setBaseSips(9)
     expect(m.state.settings.baseSips).toBe(5)

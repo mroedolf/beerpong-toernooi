@@ -75,7 +75,7 @@ State: `phase ('lobby'|'playing'|'result')`, `players [{id, name, sips}]`,
 order [ids], turnIndex, rolls {id: {dice, held, throwsUsed, committed}},
 rolloffIds|null}`, `lastResult {loserId, sips, ranking}`.
 
-Actions: `addPlayer`, `removePlayer`, `importTournamentPlayers`, `setBaseSips`,
+Actions: `addPlayer`, `removePlayer`, `importPlayers`, `setBaseSips`,
 `toggleMexDoubles`, `startGame`, `throwDice`, `toggleHold(i)`, `stay`,
 `nextRound`, `newGame (reset tallies → lobby)`. Persistence and validation follow the
 tournament store pattern (versioned key, watch + try/catch, Dutch error messages

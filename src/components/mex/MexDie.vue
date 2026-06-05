@@ -1,5 +1,5 @@
 <script setup>
-const props = defineProps({
+defineProps({
   value: { type: Number, default: null },
   held: { type: Boolean, default: false },
   holdable: { type: Boolean, default: false },
@@ -26,7 +26,9 @@ const PIPS = {
       ? 'bg-beer/90 border-beer shadow-[4px_4px_0_rgba(0,0,0,.55)] scale-95'
       : 'bg-foam border-line shadow-[4px_4px_0_rgba(0,0,0,.55)]'"
     :disabled="!holdable"
-    :aria-label="held ? 'Dobbelsteen vrijgeven' : 'Dobbelsteen vasthouden'"
+    :aria-label="!holdable
+      ? `Dobbelsteen: ${value ?? 'nog niet gegooid'}`
+      : held ? 'Dobbelsteen vrijgeven' : 'Dobbelsteen vasthouden'"
     :aria-pressed="held"
     @click="emit('toggle-hold')"
   >

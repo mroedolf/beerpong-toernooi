@@ -115,7 +115,9 @@ function onSpinEnd() {
           aria-hidden="true"
           @transitionend="onSpinEnd"
         >
-          <span class="inline-block -rotate-45">🍾</span>
+          <!-- The 🍾 glyph's neck points up-left (-45°) on Apple/Noto/Twemoji;
+               +45° makes it point straight up so rotation 0 = the top chip. -->
+          <span class="inline-block rotate-45">🍾</span>
         </div>
       </div>
 

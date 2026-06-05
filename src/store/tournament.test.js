@@ -46,6 +46,13 @@ describe('tournament store', () => {
     expect(partial.settings).toEqual({ cupsPerGame: 6, losersFinal: true })
   })
 
+  it('mergeState coerces tampered settings back to valid values', () => {
+    const garbage = mergeState({ settings: { cupsPerGame: 99, losersFinal: 'banana' } })
+    expect(garbage.settings).toEqual({ cupsPerGame: 10, losersFinal: true })
+    const offFlag = mergeState({ settings: { losersFinal: false } })
+    expect(offFlag.settings.losersFinal).toBe(false)
+  })
+
   it('setCupsPerGame accepts only 6 or 10 and drives score validation', () => {
     expect(() => t.setCupsPerGame(8)).toThrow()
     eightPlayers(t)

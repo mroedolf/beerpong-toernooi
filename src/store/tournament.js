@@ -19,11 +19,19 @@ function freshState() {
   }
 }
 
-// Deep-merges settings so a legacy stored blob (without settings) upgrades
-// in place instead of wiping a running tournament.
+// Deep-merges settings so a legacy stored blob (without settings) upgrades in
+// place instead of wiping a running tournament. Settings are coerced back to
+// valid values — localStorage can carry anything.
 export function mergeState(parsed) {
   const fresh = freshState()
-  return { ...fresh, ...parsed, settings: { ...fresh.settings, ...(parsed.settings ?? {}) } }
+  return {
+    ...fresh,
+    ...parsed,
+    settings: {
+      cupsPerGame: parsed.settings?.cupsPerGame === 6 ? 6 : 10,
+      losersFinal: parsed.settings?.losersFinal !== false,
+    },
+  }
 }
 
 function load() {

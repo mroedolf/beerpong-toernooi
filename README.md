@@ -2,7 +2,7 @@
 
 Drankspelletjes-site voor feestjes — kies je spel op de landingspagina.
 
-**Live:** https://mroedolf.github.io/beerpong-toernooi/
+**Live:** https://mroedolf.github.io/drankspelen/
 
 ## Spellen
 

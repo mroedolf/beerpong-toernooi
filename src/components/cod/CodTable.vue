@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useCod } from '../../store/cod.js'
 import { toast } from '../../store/toast.js'
 import { RULES } from '../../lib/cod.js'
+import PlayingCard from '../ui/PlayingCard.vue'
 
 const c = useCod()
 
@@ -11,7 +12,6 @@ const current = computed(() => c.state.current)
 const drawer = computed(() => (current.value ? c.playerById(current.value.drawerId) : null))
 const rule = computed(() => (current.value ? RULES[current.value.card.rank] : null))
 const remaining = computed(() => c.state.deck.length)
-const isRed = computed(() => current.value && ['♥', '♦'].includes(current.value.card.suit))
 const isKing = computed(() => current.value?.card.rank === 'K')
 
 function act(fn) {
@@ -61,18 +61,10 @@ function stop() {
       <div
         v-if="current"
         :key="remaining"
-        class="card-flip relative w-44 h-64 rounded-2xl bg-foam border-2 border-line shadow-[6px_6px_0_rgba(0,0,0,.55)]"
+        class="card-flip rounded-2xl"
         :class="isKing ? 'ring-4 ring-cup' : ''"
       >
-        <span class="absolute top-2 left-3 font-display text-2xl leading-none" :class="isRed ? 'text-cup' : 'text-night'">
-          {{ current.card.rank }}<br /><span class="text-xl">{{ current.card.suit }}</span>
-        </span>
-        <span class="absolute bottom-2 right-3 rotate-180 font-display text-2xl leading-none" :class="isRed ? 'text-cup' : 'text-night'">
-          {{ current.card.rank }}<br /><span class="text-xl">{{ current.card.suit }}</span>
-        </span>
-        <span class="absolute inset-0 grid place-items-center text-7xl" :class="isRed ? 'text-cup' : 'text-night'">
-          {{ current.card.suit }}
-        </span>
+        <PlayingCard :card="current.card" />
       </div>
       <div
         v-else

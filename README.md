@@ -26,6 +26,14 @@ Drankspelletjes-site voor feestjes — kies je spel op de landingspagina.
 - Klassieke regels (A = waterval … K = koningsbeker), in de app na te lezen
 - De vierde koning drinkt de koningsbeker leeg — einde spel
 
+### 🎴 Hoger Lager
+- 2+ spelers, raad of de volgende kaart hoger of lager is (gelijk = fout)
+- Fout: drink reeks + 1 slokken; het schandebord telt mee
+
+### 🍾 De Fles
+- Flesje draaien, digitaal: de fles tolt en wijst iemand aan
+- Ook handig als "wie begint?" voor de andere spellen
+
 ## Lokaal draaien
 
 ```bash

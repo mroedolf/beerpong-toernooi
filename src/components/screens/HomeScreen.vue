@@ -5,11 +5,15 @@ import { navigate } from '../../lib/router.js'
 import { useTournament } from '../../store/tournament.js'
 import { useMex } from '../../store/mex.js'
 import { useCod } from '../../store/cod.js'
+import { useHilo } from '../../store/hilo.js'
+import { useFles } from '../../store/fles.js'
 import { isPlayed } from '../../lib/schedule.js'
 
 const t = useTournament()
 const m = useMex()
 const c = useCod()
+const h = useHilo()
+const f = useFles()
 
 const beerpongStatus = computed(() => {
   switch (t.state.phase) {
@@ -39,7 +43,24 @@ const codStatus = computed(() => {
   return c.state.players.length > 0 ? `${c.state.players.length} spelers klaar` : null
 })
 
-const statusFor = { beerpong: beerpongStatus, mex: mexStatus, cod: codStatus }
+const hiloStatus = computed(() => {
+  if (h.state.phase === 'playing') return `Reeks ${h.state.streak} · ${h.state.deck.length} kaarten over`
+  return h.state.players.length > 0 ? `${h.state.players.length} spelers klaar` : null
+})
+
+const flesStatus = computed(() => {
+  const last = f.state.lastPickedId ? f.playerById(f.state.lastPickedId) : null
+  if (last) return `Laatst: ${last.name} 🍾`
+  return f.state.players.length > 0 ? `${f.state.players.length} spelers klaar` : null
+})
+
+const statusFor = {
+  beerpong: beerpongStatus,
+  mex: mexStatus,
+  cod: codStatus,
+  hilo: hiloStatus,
+  fles: flesStatus,
+}
 </script>
 
 <template>

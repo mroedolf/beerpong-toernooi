@@ -24,4 +24,20 @@ export const GAMES = [
     tagline: 'Trek een kaart, vrees de koning.',
     players: '2+ spelers',
   },
+  {
+    id: 'hilo',
+    path: '/hogerlager',
+    emoji: '🎴',
+    name: 'Hoger Lager',
+    tagline: 'Hoe langer de reeks, hoe harder de straf.',
+    players: '2+ spelers',
+  },
+  {
+    id: 'fles',
+    path: '/fles',
+    emoji: '🍾',
+    name: 'De Fles',
+    tagline: 'Wie de fles aanwijst, is de pineut.',
+    players: '2+ spelers',
+  },
 ]

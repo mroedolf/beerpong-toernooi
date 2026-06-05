@@ -6,6 +6,8 @@ import HomeScreen from './components/screens/HomeScreen.vue'
 import BeerpongGame from './components/screens/BeerpongGame.vue'
 import MexScreen from './components/screens/MexScreen.vue'
 import CodScreen from './components/screens/CodScreen.vue'
+import HiloScreen from './components/screens/HiloScreen.vue'
+import FlesScreen from './components/screens/FlesScreen.vue'
 
 const { path, navigate } = useRoute()
 
@@ -14,6 +16,8 @@ const routes = {
   '/beerpong': BeerpongGame,
   '/mex': MexScreen,
   '/circle': CodScreen,
+  '/hogerlager': HiloScreen,
+  '/fles': FlesScreen,
 }
 const current = computed(() => routes[path.value] ?? HomeScreen)
 const atHome = computed(() => current.value === HomeScreen)

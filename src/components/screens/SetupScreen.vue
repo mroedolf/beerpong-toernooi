@@ -9,8 +9,10 @@ const t = useTournament()
 
 const players = computed(() => t.state.players)
 const count = computed(() => players.value.length)
-const needed = computed(() => Math.max(0, 8 - count.value))
-const ready = computed(() => count.value === 8)
+const isEven = computed(() => count.value % 2 === 0)
+const ready = computed(() => count.value >= 4 && isEven.value)
+const full = computed(() => count.value >= 16)
+const teamsCount = computed(() => Math.floor(count.value / 2))
 
 // --- Add player ---
 const nameInput = ref('')
@@ -75,10 +77,29 @@ function makeTeams() {
   }
 }
 
-// Signature moment: a row of 8 cup icons that fill red as players join.
-const cups = computed(() =>
-  Array.from({ length: 8 }, (_, i) => i < count.value),
-)
+// --- Tournament settings ---
+function setCups(n) {
+  try {
+    t.setCupsPerGame(n)
+  } catch (e) {
+    toast(e.message)
+  }
+}
+
+function toggleLosersFinal() {
+  try {
+    t.toggleLosersFinal()
+  } catch (e) {
+    toast(e.message)
+  }
+}
+
+// Signature moment: a cup icon per player; an odd count shows one ghost cup —
+// the missing teammate. At least four ghosts hint at the minimum.
+const cups = computed(() => {
+  const length = Math.max(4, count.value + (isEven.value ? 0 : 1))
+  return Array.from({ length }, (_, i) => i < count.value)
+})
 const lastFilledIndex = computed(() => count.value - 1)
 </script>
 
@@ -88,10 +109,13 @@ const lastFilledIndex = computed(() => count.value - 1)
     <header class="pour-in">
       <h2 class="font-display text-3xl text-foam leading-tight">Wie speelt er mee?</h2>
       <p class="mt-1 font-display text-lg text-beer">
-        {{ count }} / 8 <span class="text-foam/50 font-sans text-sm font-semibold align-middle">spelers</span>
+        {{ count }} <span class="text-foam/50 font-sans text-sm font-semibold align-middle">spelers (4–16, even)</span>
+      </p>
+      <p v-if="ready" class="mt-0.5 text-sm font-semibold text-foam/60">
+        → {{ teamsCount }} teams · {{ teamsCount - 1 }} groepsgame{{ teamsCount - 1 === 1 ? '' : 's' }} per team + finale
       </p>
 
-      <!-- 8 cup icons fill red one-by-one; the 8th wiggles -->
+      <!-- cup icons fill red one-by-one; a ghost cup marks a missing teammate -->
       <div class="mt-3 flex items-end gap-1.5" aria-hidden="true">
         <span
           v-for="(filled, i) in cups"
@@ -111,20 +135,20 @@ const lastFilledIndex = computed(() => count.value - 1)
         v-model="nameInput"
         type="text"
         autocomplete="off"
-        :disabled="ready"
+        :disabled="full"
         placeholder="Naam van de speler"
         class="flex-1 min-h-12 rounded-xl border-2 border-line bg-night-soft px-4 text-foam placeholder:text-foam/40 font-semibold focus:outline-none focus-visible:ring-2 ring-beer disabled:opacity-40"
       />
       <button
         type="submit"
-        :disabled="ready"
+        :disabled="full"
         class="min-h-12 px-5 rounded-xl bg-cup border-b-4 border-cup-dark text-foam font-display text-lg active:translate-y-0.5 active:border-b-2 focus:outline-none focus-visible:ring-2 ring-beer disabled:opacity-40 disabled:active:translate-y-0 disabled:active:border-b-4"
       >
         +
       </button>
     </form>
-    <p v-if="ready" class="mt-2 text-xs text-foam/50 font-semibold">
-      Acht is genoeg — de bekers staan klaar. Verwijder iemand om te wisselen.
+    <p v-if="full" class="mt-2 text-xs text-foam/50 font-semibold">
+      Zestien is het maximum — meer wordt vechten om de tafel.
     </p>
 
     <!-- Player list -->
@@ -172,6 +196,43 @@ const lastFilledIndex = computed(() => count.value - 1)
     <p v-if="count === 0" class="mt-4 text-center text-sm text-foam/50 font-semibold">
       Nog niemand. Gooi de eerste naam erin 🍻
     </p>
+
+    <!-- Tournament settings -->
+    <fieldset class="mt-6 rounded-2xl border-2 border-line bg-night-soft shadow-[4px_4px_0_rgba(0,0,0,.55)] p-4 space-y-4">
+      <legend class="font-display text-lg text-beer px-2">Toernooi-instellingen</legend>
+
+      <div class="flex items-center justify-between gap-3">
+        <span class="text-sm font-semibold text-foam">Bekers per game</span>
+        <div class="flex gap-2">
+          <button
+            v-for="n in [6, 10]"
+            :key="n"
+            type="button"
+            class="min-h-10 min-w-12 px-3 rounded-xl font-display text-lg border-2 active:translate-y-0.5 focus:outline-none focus-visible:ring-2 ring-beer"
+            :class="t.state.settings.cupsPerGame === n
+              ? 'bg-cup border-cup-dark text-foam shadow-[3px_3px_0_rgba(0,0,0,.5)]'
+              : 'bg-night border-line text-foam/70'"
+            :aria-pressed="t.state.settings.cupsPerGame === n"
+            @click="setCups(n)"
+          >{{ n }}</button>
+        </div>
+      </div>
+
+      <label class="flex items-center justify-between gap-3 cursor-pointer">
+        <span class="text-sm font-semibold text-foam">
+          Verliezersfinale
+          <span v-if="teamsCount < 4" class="block text-xs text-foam/50 font-normal">
+            speelt alleen vanaf 4 teams (8 spelers)
+          </span>
+        </span>
+        <input
+          type="checkbox"
+          :checked="t.state.settings.losersFinal"
+          class="size-6 accent-cup"
+          @change="toggleLosersFinal"
+        />
+      </label>
+    </fieldset>
 
     <!-- AI key (collapsible) -->
     <div class="mt-6 rounded-2xl border-2 border-line bg-night-soft shadow-[4px_4px_0_rgba(0,0,0,.55)] overflow-hidden">
@@ -228,9 +289,9 @@ const lastFilledIndex = computed(() => count.value - 1)
         Maak teams 🎲
       </button>
       <p class="mt-2 text-center text-sm font-semibold text-foam/50">
-        <template v-if="ready">Acht spelers, vier teams — tijd om te knallen!</template>
-        <template v-else-if="needed === 1">Nog 1 speler en we kunnen knallen 🍺</template>
-        <template v-else>Nog {{ needed }} spelers en we kunnen knallen 🍺</template>
+        <template v-if="ready">{{ count }} spelers, {{ teamsCount }} teams — tijd om te knallen!</template>
+        <template v-else-if="count < 4">Minstens 4 spelers (2 teams) nodig 🍺</template>
+        <template v-else>Oneven aantal — nog eentje erbij of eentje eruit 🍺</template>
       </p>
     </div>
   </section>

@@ -5,8 +5,8 @@ export const GAMES = [
     path: '/beerpong',
     emoji: '🏆',
     name: 'Beerpong Toernooi',
-    tagline: 'Vier teams, zes games, één kampioen.',
-    players: '8 spelers · teams van 2',
+    tagline: 'Teams van twee, één kampioen.',
+    players: '4–16 spelers · teams van 2',
   },
   {
     id: 'mex',

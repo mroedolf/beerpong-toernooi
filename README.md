@@ -7,9 +7,10 @@ Drankspelletjes-site voor feestjes — kies je spel op de landingspagina.
 ## Spellen
 
 ### 🏆 Beerpong Toernooi
-- 8 spelers → 4 willekeurige teams van 2, met AI-gegenereerde belachelijke teamfoto's
-- Groepsfase: volledige round robin (6 wedstrijden, 3 per team)
-- Finale (#1 vs #2) en verliezersfinale (#3 vs #4) → elk team speelt exact 4 games
+- 4–16 spelers (even) → willekeurige teams van 2, met AI-gegenereerde belachelijke teamfoto's
+- Groepsfase: volledige round robin; finale (#1 vs #2) en optionele verliezersfinale (#3 vs #4)
+- Instelbaar: bekers per game (6 of 10), verliezersfinale aan/uit
+- Bij 8 spelers speelt elk team exact 4 games
 - Stand: winsten → bekersaldo → onderling resultaat
 
 ### 🎲 Mex (Mexico)

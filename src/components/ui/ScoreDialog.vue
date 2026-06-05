@@ -16,15 +16,17 @@ const teamB = computed(() => t.teamById(props.match.teamB))
 
 const alreadyPlayed = props.match.winnerId !== null
 
-// Prefill from an existing result, otherwise sensible defaults.
+const maxCups = computed(() => t.state.settings.cupsPerGame)
+
+// Prefill from an existing result (clamped to the configured max), else defaults.
 const winnerId = ref(props.match.winnerId)
-const cups = ref(props.match.cupsLeft ?? 1)
+const cups = ref(Math.min(props.match.cupsLeft ?? 1, t.state.settings.cupsPerGame))
 
 function dec() {
   if (cups.value > 1) cups.value -= 1
 }
 function inc() {
-  if (cups.value < 10) cups.value += 1
+  if (cups.value < maxCups.value) cups.value += 1
 }
 
 function save() {
@@ -115,7 +117,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
         <button
           type="button"
           class="font-display grid h-12 w-12 place-items-center rounded-xl border-2 border-line bg-night text-3xl text-foam transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-beer active:translate-y-0.5 disabled:opacity-40"
-          :disabled="cups >= 10"
+          :disabled="cups >= maxCups"
           aria-label="Meer bekers"
           @click="inc"
         >+</button>

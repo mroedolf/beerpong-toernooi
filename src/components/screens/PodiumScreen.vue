@@ -12,15 +12,17 @@ const t = useTournament()
 // otherwise dereference finalMatch.winnerId and throw.
 const ranking = computed(() => {
   const { finalMatch, losersMatch } = t.state
-  if (finalMatch?.winnerId == null || losersMatch?.winnerId == null) return []
+  // The losers final is optional — only require results for matches that exist.
+  if (finalMatch?.winnerId == null || (losersMatch && losersMatch.winnerId == null)) return []
   return t.podium().map(id => t.teamById(id)).filter(Boolean)
 })
 
 const champion = computed(() => ranking.value[0] ?? null)
 const fourth = computed(() => ranking.value[3] ?? null)
 
-// Medal flair per finishing position.
+// Medal flair per finishing position; everyone past the heartbreak gets beer.
 const MEDALS = ['🥇', '🥈', '🥉', '💔']
+const medalFor = i => MEDALS[i] ?? '🍺'
 
 function members(team) {
   if (!team) return []
@@ -166,7 +168,7 @@ onMounted(fireConfetti)
           :style="`--i: ${3 + i}`"
         >
           <span class="font-display text-beer text-2xl w-8 text-center shrink-0">{{ i + 1 }}</span>
-          <span class="text-xl shrink-0">{{ MEDALS[i] }}</span>
+          <span class="text-xl shrink-0">{{ medalFor(i) }}</span>
           <span class="font-display text-foam text-lg leading-tight break-words">{{ team.name }}</span>
         </li>
       </ul>

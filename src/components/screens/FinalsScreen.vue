@@ -17,7 +17,9 @@ const losersMatch = computed(() => t.state.losersMatch)
 // a plain truthiness check, so this stays correct under any non-truthy id scheme.
 const finalPlayed = computed(() => (finalMatch.value?.winnerId ?? null) !== null)
 const losersPlayed = computed(() => (losersMatch.value?.winnerId ?? null) !== null)
-const bothPlayed = computed(() => finalPlayed.value && losersPlayed.value)
+// The losers final is optional (setting / fewer than 4 teams) — only require
+// the matches that actually exist.
+const allPlayed = computed(() => finalPlayed.value && (!losersMatch.value || losersPlayed.value))
 
 // Finalists for the big VS hero split (top two teams).
 const teamA = computed(() => finalMatch.value && t.teamById(finalMatch.value.teamA))
@@ -84,30 +86,32 @@ function finish() {
       />
     </section>
 
-    <!-- VERLIEZERSFINALE -->
-    <section class="mb-2 reveal" style="--i: 3">
+    <!-- VERLIEZERSFINALE (optional) -->
+    <section v-if="losersMatch" class="mb-2 reveal" style="--i: 3">
       <h2 class="font-display text-2xl text-foam mb-1">🥉 Verliezersfinale</h2>
       <p class="text-foam/50 text-sm mb-3">om de eer (en de derde plaats)</p>
       <MatchCard
-        v-if="losersMatch"
         :match="losersMatch"
         :big="true"
         @open="openDialog(losersMatch)"
       />
     </section>
+    <p v-else class="text-foam/40 text-sm mb-2 reveal" style="--i: 3">
+      Geen verliezersfinale dit toernooi — de rest mag supporteren. 🍺
+    </p>
 
     <!-- CTA to podium -->
     <div class="fixed inset-x-0 bottom-0 z-20 bg-gradient-to-t from-night via-night to-transparent pt-8 pb-5 px-4">
       <div class="max-w-md mx-auto">
         <button
           class="w-full min-h-12 rounded-xl font-display text-lg text-foam bg-cup border-b-4 border-cup-dark active:translate-y-0.5 active:border-b-2 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-beer disabled:opacity-40 disabled:active:translate-y-0 disabled:active:border-b-4"
-          :disabled="!bothPlayed"
+          :disabled="!allPlayed"
           @click="finish"
         >
           Bekijk het podium 🎉
         </button>
-        <p v-if="!bothPlayed" class="text-foam/50 text-xs text-center mt-2">
-          Speel eerst beide finales uit.
+        <p v-if="!allPlayed" class="text-foam/50 text-xs text-center mt-2">
+          {{ losersMatch ? 'Speel eerst beide finales uit.' : 'Speel eerst de finale uit.' }}
         </p>
       </div>
     </div>

@@ -14,13 +14,13 @@ const beerpongStatus = computed(() => {
     case 'teams':
       return 'Teams gemaakt — klaar voor de groepsfase'
     case 'group':
-      return `Groepsfase — ${t.state.groupMatches.filter(isPlayed).length}/6 gespeeld`
+      return `Groepsfase — ${t.state.groupMatches.filter(isPlayed).length}/${t.state.groupMatches.length} gespeeld`
     case 'finals':
       return 'Finales bezig 🔥'
     case 'podium':
       return 'Afgelopen — kampioen bekend 🏆'
     default:
-      return t.state.players.length > 0 ? `${t.state.players.length}/8 spelers ingevuld` : null
+      return t.state.players.length > 0 ? `${t.state.players.length} spelers ingevuld` : null
   }
 })
 

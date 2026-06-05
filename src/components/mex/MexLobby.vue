@@ -138,7 +138,7 @@ function add() {
         Gooi de eerste ronde →
       </button>
       <p v-if="!canStart" class="text-center text-xs text-foam/50">
-        Minstens 2 spelers nodig — nodig nog {{ 2 - m.state.players.length }} iemand uit.
+        Minstens 2 spelers nodig — je hebt er nog {{ 2 - m.state.players.length }} te kort.
       </p>
       <button
         v-if="hasSips"

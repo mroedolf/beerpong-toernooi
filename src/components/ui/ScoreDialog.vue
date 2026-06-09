@@ -14,6 +14,10 @@ const t = useTournament()
 const teamA = computed(() => t.teamById(props.match.teamA))
 const teamB = computed(() => t.teamById(props.match.teamB))
 
+const membersOf = team => (team?.playerIds ?? []).map(id => t.playerById(id)?.name).filter(Boolean).join(' & ')
+const membersA = computed(() => membersOf(teamA.value))
+const membersB = computed(() => membersOf(teamB.value))
+
 const alreadyPlayed = props.match.winnerId !== null
 
 const maxCups = computed(() => t.state.settings.cupsPerGame)
@@ -90,6 +94,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
           @click="winnerId = match.teamA"
         >
           <span class="line-clamp-2 block">{{ teamA?.name ?? '???' }}</span>
+          <span v-if="membersA" class="mt-0.5 block truncate text-xs font-sans font-semibold text-foam/50">{{ membersA }}</span>
         </button>
         <button
           type="button"
@@ -100,6 +105,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
           @click="winnerId = match.teamB"
         >
           <span class="line-clamp-2 block">{{ teamB?.name ?? '???' }}</span>
+          <span v-if="membersB" class="mt-0.5 block truncate text-xs font-sans font-semibold text-foam/50">{{ membersB }}</span>
         </button>
       </div>
 

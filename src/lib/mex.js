@@ -20,6 +20,15 @@ export function scoreRoll(d1, d2) {
   return { rank: hi * 10 + lo, label: `${hi}${lo}`, isMex: false, isDouble: false }
 }
 
+// Sips the current thrower may hand out for the dice on the table: a double's
+// face value, 1 for a returned 31, otherwise nothing.
+export function dealableSips(d1, d2) {
+  const score = scoreRoll(d1, d2)
+  if (score.isDouble) return d1
+  if (score.rank === 31) return 1
+  return 0
+}
+
 export function lowestOf(entries) {
   const min = Math.min(...entries.map(e => e.rank))
   return entries.filter(e => e.rank === min).map(e => e.id)

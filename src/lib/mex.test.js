@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { rollDie, scoreRoll, lowestOf, formatAdjes, MEX_RANK } from './mex.js'
+import { rollDie, scoreRoll, lowestOf, formatAdjes, dealableSips, MEX_RANK } from './mex.js'
 
 describe('rollDie', () => {
   it('maps the unit interval onto 1..6', () => {
@@ -36,6 +36,21 @@ describe('lowestOf', () => {
   })
   it('returns all tied lowest ids', () => {
     expect(lowestOf([{ id: 'a', rank: 31 }, { id: 'b', rank: 31 }, { id: 'c', rank: 600 }])).toEqual(['a', 'b'])
+  })
+})
+
+describe('dealableSips', () => {
+  it('hands out a double its face value', () => {
+    expect(dealableSips(6, 6)).toBe(6)
+    expect(dealableSips(1, 1)).toBe(1)
+  })
+  it('hands out one sip for a returned 31', () => {
+    expect(dealableSips(3, 1)).toBe(1)
+    expect(dealableSips(1, 3)).toBe(1)
+  })
+  it('hands out nothing for normal rolls or a Mex', () => {
+    expect(dealableSips(6, 5)).toBe(0)
+    expect(dealableSips(2, 1)).toBe(0)
   })
 })
 

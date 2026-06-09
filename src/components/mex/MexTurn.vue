@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useMex } from '../../store/mex.js'
-import { scoreRoll, formatAdjes } from '../../lib/mex.js'
+import { scoreRoll, formatAdjes, dealableSips } from '../../lib/mex.js'
 import { toast } from '../../store/toast.js'
 import { playMex, playDouble, playReturn31 } from '../../lib/sound.js'
 import MexDie from './MexDie.vue'
@@ -21,6 +21,12 @@ const score = computed(() =>
   roll.value.dice[0] !== null ? scoreRoll(roll.value.dice[0], roll.value.dice[1]) : null,
 )
 const isReturned31 = computed(() => score.value?.rank === 31)
+// Sips this throw lets the player hand out, and to whom (everyone but the thrower).
+const dealAmount = computed(() =>
+  roll.value.dice[0] !== null ? dealableSips(roll.value.dice[0], roll.value.dice[1]) : 0,
+)
+const canDeal = computed(() => dealAmount.value > 0 && !roll.value.dealt)
+const dealTargets = computed(() => m.state.players.filter(p => p.id !== currentId.value))
 const potAdjes = computed(() => round.value.mexCount * m.state.settings.potPerMex)
 const isLastThrower = computed(() => round.value.turnIndex === activeIds.value.length - 1)
 const canThrow = computed(() => !roll.value.committed && roll.value.throwsUsed < cap.value)
@@ -105,6 +111,26 @@ function throwDice() {
     </p>
     <p v-if="canHold" class="text-center text-xs text-foam/50">
       Tik op een dobbelsteen om hem vast te houden (max één).
+    </p>
+
+    <!-- Uitdelen: kies wie de slokken van een dubbel of 31 drinkt -->
+    <div v-if="canDeal" class="space-y-2">
+      <p class="text-center text-sm text-foam/70">
+        Wie drinkt {{ dealAmount }} {{ dealAmount === 1 ? 'slok' : 'slokken' }}?
+      </p>
+      <div class="flex flex-wrap justify-center gap-2">
+        <button
+          v-for="p in dealTargets"
+          :key="p.id"
+          class="min-h-11 px-4 rounded-xl font-semibold bg-night-soft text-foam border-2 border-line active:translate-y-0.5 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
+          @click="act(() => m.dealSips(p.id))"
+        >
+          {{ p.name }}
+        </button>
+      </div>
+    </div>
+    <p v-else-if="dealAmount > 0 && roll.dealt" class="text-center text-sm font-display text-beer" role="status">
+      {{ dealAmount }} {{ dealAmount === 1 ? 'slok' : 'slokken' }} uitgedeeld.
     </p>
 
     <div class="space-y-3">

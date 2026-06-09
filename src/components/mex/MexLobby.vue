@@ -163,9 +163,9 @@ function toggleSound() {
       <summary class="font-display text-beer cursor-pointer">Hoe werkt het?</summary>
       <ul class="mt-3 space-y-2 text-sm text-foam/80 list-disc pl-4">
         <li><strong>Mex</strong> (2 en 1) is de hoogste worp én gooit {{ formatAdjes(m.state.settings.potPerMex) }} adje in de pot.</li>
-        <li>Dubbels zijn honderdtallen (6-6 = 600 … 1-1 = 100), kloppen alle gewone worpen, en je mag dat cijfer als slokken uitdelen.</li>
+        <li>Dubbels zijn honderdtallen (6-6 = 600 … 1-1 = 100), kloppen alle gewone worpen, en je mag dat cijfer aan slokken uitdelen aan een speler naar keuze.</li>
         <li>Gewone worpen: hoogste steen ×10 + laagste (65 is de hoogste, 32 de laagste).</li>
-        <li>Gooi je <strong>31</strong>? Deel 1 slok uit en je krijgt de worp terug.</li>
+        <li>Gooi je <strong>31</strong>? Deel 1 slok uit aan een speler naar keuze en je krijgt de worp terug.</li>
         <li>De voorgooier gooit max 3 keer en bepaalt zo hoe vaak de rest mag gooien.</li>
         <li>Je mag één dobbelsteen vasthouden tussen worpen.</li>
         <li>Laagste worp van de ronde drinkt de basis-slokken plus de pot.</li>

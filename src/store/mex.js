@@ -1,5 +1,5 @@
 import { reactive, watch } from 'vue'
-import { rollDie, scoreRoll, lowestOf } from '../lib/mex.js'
+import { rollDie, scoreRoll, lowestOf, dealableSips } from '../lib/mex.js'
 
 export const MEX_STORAGE_KEY = 'beerpong:mex:v2'
 
@@ -14,7 +14,7 @@ function freshState() {
 }
 
 function freshRollState() {
-  return { dice: [null, null], held: [false, false], throwsUsed: 0, committed: false }
+  return { dice: [null, null], held: [false, false], throwsUsed: 0, committed: false, dealt: false }
 }
 
 function freshRound(number, order) {
@@ -135,6 +135,7 @@ const actions = {
     for (const i of [0, 1]) {
       if (!roll.held[i]) roll.dice[i] = rollDie(rand)
     }
+    roll.dealt = false // a fresh roll may deal again
     const score = scoreRoll(roll.dice[0], roll.dice[1])
     if (score.rank === 31) {
       // Huisregel: 31 = deel 1 slok uit en krijg de worp terug — the throw never stands.
@@ -167,6 +168,21 @@ const actions = {
     // A returned 31 can be on the table (hold + reroll into 31) — it never stands.
     if (scoreRoll(roll.dice[0], roll.dice[1]).rank === 31) throw new Error('31 staat niet — gooi opnieuw')
     this._commit()
+  },
+
+  // Hand the sips from a double (its face value) or a returned 31 (one sip) to
+  // a chosen player, so dealt-out sips land on a real tally and totals add up.
+  dealSips(targetId) {
+    requirePlaying()
+    const roll = currentRoll()
+    if (roll.dice[0] === null) throw new Error('Eerst gooien')
+    if (roll.dealt) throw new Error('Je hebt deze worp al uitgedeeld')
+    const amount = dealableSips(roll.dice[0], roll.dice[1])
+    if (!amount) throw new Error('Met deze worp deel je niets uit')
+    const target = this.playerById(targetId)
+    if (!target) throw new Error('Onbekende speler')
+    target.sips += amount
+    roll.dealt = true
   },
 
   _commit() {

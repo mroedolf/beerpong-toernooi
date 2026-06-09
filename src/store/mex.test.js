@@ -71,6 +71,33 @@ describe('mex store', () => {
     expect(() => m.throwDice(dieRand(6, 5))).toThrow() // no more throws after a Mex
   })
 
+  it('deals a double to a chosen player and counts it on their tally', () => {
+    const [a, b] = twoPlayers()
+    m.startGame()
+    m.throwDice(dieRand(4, 4)) // An: double 4 → 4 sips to deal
+    m.dealSips(b)
+    expect(m.playerById(b).sips).toBe(4)
+    expect(() => m.dealSips(a)).toThrow(/al uitgedeeld/) // one deal per throw
+  })
+
+  it('deals one sip for a returned 31 and resets the deal on the next throw', () => {
+    const [a, b] = twoPlayers()
+    m.startGame()
+    m.throwDice(dieRand(3, 1)) // An: returned 31 → 1 sip
+    m.dealSips(b)
+    expect(m.playerById(b).sips).toBe(1)
+    m.throwDice(dieRand(5, 5)) // re-throw into a double → may deal again
+    m.dealSips(b)
+    expect(m.playerById(b).sips).toBe(6) // 1 + 5
+  })
+
+  it('refuses to deal on a normal roll or a Mex', () => {
+    const [, b] = twoPlayers()
+    m.startGame()
+    m.throwDice(dieRand(6, 5)) // normal 65
+    expect(() => m.dealSips(b)).toThrow(/niets uit/)
+  })
+
   it('clamps base sips to 1..5', () => {
     m.setBaseSips(9)
     expect(m.state.settings.baseSips).toBe(5)

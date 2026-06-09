@@ -5,11 +5,15 @@ import { useTournament } from '../../store/tournament.js'
 const t = useTournament()
 
 const rows = computed(() =>
-  t.currentStandings().map((row, i) => ({
-    ...row,
-    rank: i + 1,
-    name: t.teamById(row.teamId)?.name ?? '???',
-  })),
+  t.currentStandings().map((row, i) => {
+    const team = t.teamById(row.teamId)
+    return {
+      ...row,
+      rank: i + 1,
+      name: team?.name ?? '???',
+      members: (team?.playerIds ?? []).map(id => t.playerById(id)?.name).filter(Boolean).join(' & '),
+    }
+  }),
 )
 
 function signed(n) {
@@ -50,6 +54,7 @@ function signed(n) {
               class="font-display block truncate text-base leading-tight"
               :class="row.rank <= 2 ? 'text-foam' : ''"
             >{{ row.name }}</span>
+            <span v-if="row.members" class="block truncate text-xs text-foam/50 leading-tight">{{ row.members }}</span>
           </td>
           <td class="font-display py-2.5 px-1 text-center text-base tabular-nums">{{ row.played }}</td>
           <td class="font-display py-2.5 px-1 text-center text-base text-beer tabular-nums">{{ row.wins }}</td>

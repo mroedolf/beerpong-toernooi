@@ -15,6 +15,11 @@ const t = useTournament()
 const teamA = computed(() => t.teamById(props.match.teamA))
 const teamB = computed(() => t.teamById(props.match.teamB))
 
+// Team member names, so you can see who's in each team during the tournament.
+const membersOf = team => (team?.playerIds ?? []).map(id => t.playerById(id)?.name).filter(Boolean).join(' & ')
+const membersA = computed(() => membersOf(teamA.value))
+const membersB = computed(() => membersOf(teamB.value))
+
 const played = computed(() => props.match.winnerId !== null)
 const winnerIsA = computed(() => played.value && props.match.winnerId === props.match.teamA)
 const winnerIsB = computed(() => played.value && props.match.winnerId === props.match.teamB)
@@ -75,10 +80,13 @@ const gameLabel = computed(() => {
           alt=""
           class="h-9 w-9 shrink-0 rounded-lg border border-line object-cover"
         />
-        <span
-          class="font-display truncate text-lg leading-tight"
-          :class="winnerIsA ? 'text-beer' : 'text-foam'"
-        >{{ teamA?.name ?? '???' }}</span>
+        <span class="min-w-0">
+          <span
+            class="font-display block truncate text-lg leading-tight"
+            :class="winnerIsA ? 'text-beer' : 'text-foam'"
+          >{{ teamA?.name ?? '???' }}</span>
+          <span v-if="membersA" class="block truncate text-xs text-foam/50 leading-tight">{{ membersA }}</span>
+        </span>
       </div>
 
       <span class="font-display shrink-0 text-sm text-foam/40">vs</span>
@@ -88,10 +96,13 @@ const gameLabel = computed(() => {
         class="flex min-w-0 flex-1 items-center justify-end gap-2 text-right"
         :class="played && !winnerIsB ? 'opacity-40' : ''"
       >
-        <span
-          class="font-display truncate text-lg leading-tight"
-          :class="winnerIsB ? 'text-beer' : 'text-foam'"
-        >{{ teamB?.name ?? '???' }}</span>
+        <span class="min-w-0">
+          <span
+            class="font-display block truncate text-lg leading-tight"
+            :class="winnerIsB ? 'text-beer' : 'text-foam'"
+          >{{ teamB?.name ?? '???' }}</span>
+          <span v-if="membersB" class="block truncate text-xs text-foam/50 leading-tight">{{ membersB }}</span>
+        </span>
         <img
           v-if="teamB?.aiPhoto"
           :src="teamB.aiPhoto"

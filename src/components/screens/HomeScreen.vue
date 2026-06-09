@@ -7,6 +7,7 @@ import { useMex } from '../../store/mex.js'
 import { useCod } from '../../store/cod.js'
 import { useHilo } from '../../store/hilo.js'
 import { useFles } from '../../store/fles.js'
+import { useTourney } from '../../store/tourney.js'
 import { isPlayed } from '../../lib/schedule.js'
 
 const t = useTournament()
@@ -14,6 +15,7 @@ const m = useMex()
 const c = useCod()
 const h = useHilo()
 const f = useFles()
+const tr = useTourney()
 
 const beerpongStatus = computed(() => {
   switch (t.state.phase) {
@@ -54,12 +56,19 @@ const flesStatus = computed(() => {
   return f.state.players.length > 0 ? `${f.state.players.length} spelers klaar` : null
 })
 
+const tourneyStatus = computed(() => {
+  if (tr.state.phase === 'active') return `${tr.state.teams.length} teams · bezig`
+  if (tr.state.phase === 'done') return 'Afgelopen — kampioen bekend'
+  return tr.state.players.length > 0 ? `${tr.state.players.length} spelers klaar` : null
+})
+
 const statusFor = {
   beerpong: beerpongStatus,
   mex: mexStatus,
   cod: codStatus,
   hilo: hiloStatus,
   fles: flesStatus,
+  tourney: tourneyStatus,
 }
 </script>
 

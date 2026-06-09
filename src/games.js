@@ -40,4 +40,12 @@ export const GAMES = [
     tagline: 'Wie de fles aanwijst, drinkt.',
     players: '2+ spelers',
   },
+  {
+    id: 'tourney',
+    path: '/toernooi',
+    emoji: '🏅',
+    name: 'Toernooi',
+    tagline: 'Elk spel, elk format — één kampioen.',
+    players: '2+ spelers · teams of solo',
+  },
 ]

@@ -1,7 +1,32 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { generateTeamPhoto, extractImage, splitDataUrl, GeminiError } from './gemini.js'
+import { generateTeamPhoto, verifyApiKey, extractImage, splitDataUrl, GeminiError } from './gemini.js'
 
 afterEach(() => vi.unstubAllGlobals())
+
+describe('verifyApiKey', () => {
+  it('resolves true when the models call succeeds', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({}) })
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(verifyApiKey('good')).resolves.toBe(true)
+    const [url, opts] = fetchMock.mock.calls[0]
+    expect(url).toContain('/v1beta/models')
+    expect(opts.headers['x-goog-api-key']).toBe('good')
+  })
+  it('rejects an empty key without calling the network', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(verifyApiKey('  ')).rejects.toThrow(/API key/)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+  it('maps 4xx to an invalid-key message', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 400 }))
+    await expect(verifyApiKey('bad')).rejects.toThrow(/ongeldig/)
+  })
+  it('maps a thrown fetch to a connection message', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network')))
+    await expect(verifyApiKey('x')).rejects.toThrow(/verbinding/)
+  })
+})
 
 describe('splitDataUrl', () => {
   it('splits mime and base64 payload', () => {

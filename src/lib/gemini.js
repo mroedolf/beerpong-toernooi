@@ -1,9 +1,28 @@
 // Browser-direct client for the Gemini Interactions API (image generation).
 
 const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/interactions'
+const MODELS_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models'
 const MODEL = 'gemini-3.1-flash-image'
 
 export class GeminiError extends Error {}
+
+// Lightweight key check: list a single model. Confirms the key is valid and
+// enabled for the Gemini API without spending image-generation quota.
+export async function verifyApiKey(apiKey) {
+  const key = (apiKey ?? '').trim()
+  if (!key) throw new GeminiError('Vul eerst een API key in')
+  let res
+  try {
+    res = await fetch(`${MODELS_ENDPOINT}?pageSize=1`, { headers: { 'x-goog-api-key': key } })
+  } catch {
+    throw new GeminiError('Geen verbinding met Google. Check je internet.')
+  }
+  if (res.ok) return true
+  if ([400, 401, 403].includes(res.status)) {
+    throw new GeminiError('De key is ongeldig of niet geactiveerd voor de Gemini API.')
+  }
+  throw new GeminiError(`Kon de key niet controleren (HTTP ${res.status}).`)
+}
 
 export function splitDataUrl(dataUrl) {
   const match = /^data:([^;,]+);base64,(.+)$/.exec(dataUrl)

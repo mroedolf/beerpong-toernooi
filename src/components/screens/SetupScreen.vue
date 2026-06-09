@@ -1,8 +1,9 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useTournament } from '../../store/tournament.js'
 import { toast } from '../../store/toast.js'
 import { fileToDataUrl, downscale, PLAYER_PHOTO_MAX } from '../../lib/images.js'
+import { verifyApiKey } from '../../lib/gemini.js'
 import PlayerAvatar from '../ui/PlayerAvatar.vue'
 
 const t = useTournament()
@@ -59,12 +60,32 @@ async function onPhotoChange(event, id) {
 const aiOpen = ref(false)
 const apiKey = ref(t.getApiKey())
 
+const keyStatus = ref('idle') // idle | testing | ok | fail
+const keyMessage = ref('')
+
+// A fresh edit invalidates any earlier test result.
+watch(apiKey, () => { keyStatus.value = 'idle'; keyMessage.value = '' })
+
 function saveApiKey() {
   try {
     t.setApiKey(apiKey.value)
     toast('API key opgeslagen', 'success')
   } catch (e) {
     toast(e.message)
+  }
+}
+
+async function testApiKey() {
+  keyStatus.value = 'testing'
+  keyMessage.value = ''
+  try {
+    await verifyApiKey(apiKey.value)
+    t.setApiKey(apiKey.value) // a working key is worth keeping
+    keyStatus.value = 'ok'
+    keyMessage.value = 'De key werkt — opgeslagen.'
+  } catch (e) {
+    keyStatus.value = 'fail'
+    keyMessage.value = e.message
   }
 }
 
@@ -265,6 +286,24 @@ const lastFilledIndex = computed(() => count.value - 1)
           >
             Bewaar
           </button>
+        </div>
+        <div class="mt-2 flex items-center gap-3">
+          <button
+            type="button"
+            class="min-h-11 px-4 rounded-xl border-2 border-cup bg-cup/15 text-cup font-display disabled:opacity-50 active:translate-y-0.5 focus:outline-none focus-visible:ring-2 ring-beer"
+            :disabled="!apiKey || keyStatus === 'testing'"
+            @click="testApiKey"
+          >
+            {{ keyStatus === 'testing' ? 'Testen…' : 'Test de key' }}
+          </button>
+          <p
+            v-if="keyMessage"
+            class="text-sm font-semibold leading-snug"
+            :class="keyStatus === 'ok' ? 'text-beer' : 'text-cup'"
+            role="status"
+          >
+            <span aria-hidden="true">{{ keyStatus === 'ok' ? '✓' : '✗' }}</span> {{ keyMessage }}
+          </p>
         </div>
         <p class="mt-2 text-xs text-foam/50 leading-snug">
           Geen key?

@@ -181,10 +181,11 @@ function toggleSound() {
         <li>Gelijkstand onderaan? Roll-off: één worp, verliezer drinkt.</li>
         <li>De verliezer mag de volgende ronde voorgooien.</li>
         <li v-if="m.state.settings.bluffMode">
-          <strong>Blufmodus:</strong> de gsm gaat dicht door. Bij het doorgeven mag je een dubbel
-          claimen — waar of gelogen. Geloven ze het, dan deel je de slokken uit; challengen ze en had
-          je geen dubbel, dan drink je het dubbele van de basis. Was het wél een dubbel, dan drinkt de
-          uitdager het dubbele.
+          <strong>Blufmodus:</strong> bij elke worp mag je een dubbel claimen — waar of gelogen.
+          Kies (bij een bluf) een aantal, wijs een speler aan en duid aan of die gechallenged heeft.
+          Niet gechallenged: de aangewezen speler drinkt het geclaimde aantal. Wel gechallenged en je
+          blufte: jij drinkt het dubbele van de basis. Had je écht een dubbel, dan drinkt de uitdager
+          het dubbele.
         </li>
       </ul>
     </details>

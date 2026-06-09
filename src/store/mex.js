@@ -27,7 +27,6 @@ function freshRound(number, order) {
     turnIndex: 0,
     rolls: Object.fromEntries(order.map(id => [id, freshRollState()])),
     rolloffIds: null,
-    claim: null, // bluff mode: { byId, value, targetId } awaiting believe/challenge
   }
 }
 
@@ -189,57 +188,40 @@ const actions = {
     roll.dealt = true
   },
 
-  // Bluff mode: claim a double (truthfully or not) so you may hand out sips.
-  // The phone is passed face-down — the table only sees the claim, not the dice.
-  claimDouble(value, targetId) {
+  // Bluff mode: claim a double on any throw and point at one player. Whether
+  // the dice really show a double stays the secret. `challenged` records what
+  // the table did:
+  //   - not challenged → the named player drinks the claimed `amount`
+  //   - challenged + real double → the challenger (named player) drinks 2× base
+  //   - challenged + bluff       → the thrower drinks 2× base
+  // Returns the outcome so the UI can announce it.
+  resolveClaim(targetId, amount, challenged) {
     requirePlaying()
     if (!state.settings.bluffMode) throw new Error('Bluffen kan alleen in blufmodus')
     const roll = currentRoll()
-    if (!roll.committed) throw new Error('Leg eerst je worp vast')
-    if (state.round.claim) throw new Error('Er ligt al een claim')
-    const v = Math.round(value)
+    if (roll.dice[0] === null) throw new Error('Eerst gooien')
+    if (roll.dealt) throw new Error('Je hebt deze worp al uitgedeeld')
+    const v = Math.round(amount)
     if (v < 1 || v > 6) throw new Error('Kies een dubbel van 1 tot 6')
-    if (!this.playerById(targetId)) throw new Error('Kies wie de slokken drinkt')
     const byId = activeIds()[state.round.turnIndex]
-    if (targetId === byId) throw new Error('Je kunt niet aan jezelf uitdelen')
-    state.round.claim = { byId, value: v, targetId }
-  },
-
-  // The table believes the claim: the claimed sips are handed out, turn passes.
-  believeClaim() {
-    requirePlaying()
-    const claim = state.round.claim
-    if (!claim) throw new Error('Geen claim om te beoordelen')
-    this.playerById(claim.targetId).sips += claim.value
-    state.round.claim = null
-    this.passTurn()
-  },
-
-  // A challenger calls the bluff: reveal the dice. No real double → the claimer
-  // drinks double the base sips; a real double → the challenger drinks double.
-  challengeClaim(challengerId) {
-    requirePlaying()
-    const claim = state.round.claim
-    if (!claim) throw new Error('Geen claim om uit te dagen')
-    if (challengerId === claim.byId || !this.playerById(challengerId)) {
-      throw new Error('Kies een tegenstander die uitdaagt')
-    }
-    const roll = state.round.rolls[claim.byId]
-    const wasReallyDouble = roll.dice[0] !== null && roll.dice[0] === roll.dice[1]
+    const target = this.playerById(targetId)
+    if (!target) throw new Error('Kies een speler')
+    if (targetId === byId) throw new Error('Kies een andere speler')
+    const isRealDouble = roll.dice[0] === roll.dice[1]
     const penalty = 2 * state.settings.baseSips
-    const drinkerId = wasReallyDouble ? challengerId : claim.byId
-    this.playerById(drinkerId).sips += penalty
-    state.round.claim = { ...claim, revealed: true, wasReallyDouble, drinkerId }
-    return { wasReallyDouble, drinkerId, penalty }
-  },
-
-  // Clear a resolved challenge and pass the turn on (lets the table see the
-  // revealed dice before the next player takes over).
-  ackChallenge() {
-    requirePlaying()
-    if (!state.round.claim?.revealed) throw new Error('Geen onthulde claim')
-    state.round.claim = null
-    this.passTurn()
+    let outcome
+    if (!challenged) {
+      target.sips += v
+      outcome = { kind: 'dealt', drinkerId: targetId, amount: v, isRealDouble }
+    } else if (isRealDouble) {
+      target.sips += penalty // wrong challenge — the dice really were a double
+      outcome = { kind: 'wrongChallenge', drinkerId: targetId, amount: penalty, isRealDouble }
+    } else {
+      this.playerById(byId).sips += penalty // caught bluffing
+      outcome = { kind: 'caught', drinkerId: byId, amount: penalty, isRealDouble }
+    }
+    roll.dealt = true
+    return outcome
   },
 
   _commit() {

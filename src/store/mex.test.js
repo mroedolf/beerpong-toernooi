@@ -99,65 +99,61 @@ describe('mex store', () => {
     expect(() => m.dealSips(b)).toThrow(/niets uit/)
   })
 
-  it('bluff mode: a believed double claim hands out the claimed sips and passes', () => {
-    const [a, b] = twoPlayers()
+  it('bluff: a believed claim hands the claimed sips to the named player', () => {
+    const [, b] = twoPlayers()
     m.setBluffMode(true)
     m.startGame()
-    m.throwDice(dieRand(6, 5)) // An: 65 — no real double
-    m.stay()
-    m.claimDouble(6, b) // bluff a double 6
-    expect(m.state.round.claim).toMatchObject({ byId: a, value: 6, targetId: b })
-    m.believeClaim()
+    m.throwDice(dieRand(6, 5)) // no real double — pure bluff
+    const out = m.resolveClaim(b, 6, false) // believed
+    expect(out.kind).toBe('dealt')
     expect(m.playerById(b).sips).toBe(6)
-    expect(m.state.round.claim).toBe(null)
-    expect(m.state.round.turnIndex).toBe(1) // turn passed on
   })
 
-  it('bluff mode: a challenged bluff makes the bluffer drink double the base sips', () => {
+  it('bluff: a challenged bluff makes the thrower drink double the base sips', () => {
     const [a, b] = twoPlayers()
     m.setBluffMode(true)
     m.startGame()
     m.throwDice(dieRand(6, 5)) // no real double
-    m.stay()
-    m.claimDouble(6, b)
-    const res = m.challengeClaim(b)
-    expect(res.wasReallyDouble).toBe(false)
+    const out = m.resolveClaim(b, 6, true) // challenged
+    expect(out.kind).toBe('caught')
     expect(m.playerById(a).sips).toBe(4) // 2 × base(2)
     expect(m.playerById(b).sips).toBe(0)
-    expect(m.state.round.claim.revealed).toBe(true)
-    m.ackChallenge()
-    expect(m.state.round.claim).toBe(null)
   })
 
-  it('bluff mode: a wrong challenge makes the challenger drink double the base sips', () => {
+  it('bluff: challenging a real double makes the challenger drink double the base sips', () => {
     const [a, b] = twoPlayers()
     m.setBluffMode(true)
     m.startGame()
-    m.throwDice(dieRand(4, 4)) // real double 4
-    m.stay()
-    m.claimDouble(4, b)
-    const res = m.challengeClaim(b)
-    expect(res.wasReallyDouble).toBe(true)
-    expect(m.playerById(b).sips).toBe(4) // challenger pays
+    m.throwDice(dieRand(4, 4)) // real double
+    const out = m.resolveClaim(b, 4, true) // wrong challenge
+    expect(out.kind).toBe('wrongChallenge')
+    expect(m.playerById(b).sips).toBe(4)
     expect(m.playerById(a).sips).toBe(0)
   })
 
-  it('bluff mode: claims are validated', () => {
+  it('bluff: works on any throw, not just after committing', () => {
+    const [, b] = twoPlayers()
+    m.setBluffMode(true)
+    m.startGame()
+    m.throwDice(dieRand(3, 2)) // first of up to 3 throws, not committed
+    expect(m.state.round.rolls[m.state.players[0].id].committed).toBe(false)
+    m.resolveClaim(b, 5, false)
+    expect(m.playerById(b).sips).toBe(5)
+  })
+
+  it('bluff: validates mode, value, target and one claim per throw', () => {
     const [a, b] = twoPlayers()
     m.startGame() // bluff off
     m.throwDice(dieRand(6, 5))
-    m.stay()
-    expect(() => m.claimDouble(6, b)).toThrow(/blufmodus/)
+    expect(() => m.resolveClaim(b, 6, false)).toThrow(/blufmodus/)
     m.stopGame()
     m.setBluffMode(true)
     m.startGame()
-    m.throwDice(dieRand(6, 5)) // not committed yet (cap 3)
-    expect(() => m.claimDouble(6, b)).toThrow(/vast/)
-    m.stay()
-    expect(() => m.claimDouble(9, b)).toThrow(/1 tot 6/)
-    expect(() => m.claimDouble(6, a)).toThrow(/jezelf/)
-    m.claimDouble(6, b)
-    expect(() => m.challengeClaim(a)).toThrow(/uitdaagt/) // claimer can't challenge themselves
+    m.throwDice(dieRand(6, 5))
+    expect(() => m.resolveClaim(b, 9, false)).toThrow(/1 tot 6/)
+    expect(() => m.resolveClaim(a, 6, false)).toThrow(/andere speler/)
+    m.resolveClaim(b, 6, false)
+    expect(() => m.resolveClaim(b, 6, false)).toThrow(/al uitgedeeld/)
   })
 
   it('clamps base sips to 1..5', () => {

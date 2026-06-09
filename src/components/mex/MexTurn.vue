@@ -1,10 +1,11 @@
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useMex } from '../../store/mex.js'
 import { scoreRoll, formatAdjes, dealableSips } from '../../lib/mex.js'
 import { toast } from '../../store/toast.js'
 import { playMex, playDouble, playReturn31 } from '../../lib/sound.js'
 import MexDie from './MexDie.vue'
+import MexClaim from './MexClaim.vue'
 
 const m = useMex()
 
@@ -25,7 +26,13 @@ const isReturned31 = computed(() => score.value?.rank === 31)
 const dealAmount = computed(() =>
   roll.value.dice[0] !== null ? dealableSips(roll.value.dice[0], roll.value.dice[1]) : 0,
 )
-const canDeal = computed(() => dealAmount.value > 0 && !roll.value.dealt)
+const bluff = computed(() => m.state.settings.bluffMode)
+const claim = computed(() => round.value.claim)
+// In bluff mode a double is handed out via a claim (so it can be challenged),
+// not the open picker; a returned 31 still deals openly.
+const canDeal = computed(
+  () => dealAmount.value > 0 && !roll.value.dealt && !(bluff.value && score.value?.isDouble),
+)
 const dealTargets = computed(() => m.state.players.filter(p => p.id !== currentId.value))
 const potAdjes = computed(() => round.value.mexCount * m.state.settings.potPerMex)
 const isLastThrower = computed(() => round.value.turnIndex === activeIds.value.length - 1)
@@ -45,6 +52,7 @@ function act(fn) {
 
 // Roll the dice and give special outcomes their own sound cue.
 function throwDice() {
+  claiming.value = false
   act(() => {
     m.throwDice()
     const s = score.value
@@ -54,10 +62,25 @@ function throwDice() {
     else if (s.rank === 31) playReturn31()
   })
 }
+
+// Bluff-mode claim controls: pick a double value, then who drinks it.
+const claiming = ref(false)
+const claimValue = ref(6)
+function openClaim() {
+  claimValue.value = score.value?.isDouble ? roll.value.dice[0] : 6
+  claiming.value = true
+}
+function submitClaim(targetId) {
+  act(() => {
+    m.claimDouble(claimValue.value, targetId)
+    claiming.value = false
+  })
+}
 </script>
 
 <template>
-  <section class="pt-6 space-y-6">
+  <MexClaim v-if="claim" />
+  <section v-else class="pt-6 space-y-6">
     <header class="text-center space-y-1 pour-in">
       <p class="text-sm font-semibold uppercase tracking-widest text-foam/50">
         {{ inRolloff ? 'Roll-off!' : `Ronde ${round.number}` }}
@@ -84,9 +107,9 @@ function throwDice() {
       <span class="text-sm text-foam/80 block">+{{ formatAdjes(m.state.settings.potPerMex) }} adje in de pot</span>
     </div>
 
-    <!-- Dubbel: uitdelen -->
+    <!-- Dubbel: uitdelen (in blufmodus via de claim, niet open) -->
     <p v-if="score?.isDouble" class="mex-stamp text-center font-display text-xl text-beer" role="status">
-      Dubbel! Deel {{ roll.dice[0] }} slokken uit
+      Dubbel!<template v-if="!bluff"> Deel {{ roll.dice[0] }} slokken uit</template>
     </p>
 
     <!-- 31: worp terug -->
@@ -149,11 +172,55 @@ function throwDice() {
         Blijven staan
       </button>
       <button
-        v-if="roll.committed"
+        v-if="roll.committed && !claiming"
         class="w-full min-h-14 rounded-xl font-display text-2xl bg-beer text-night border-b-4 border-beer/60 active:translate-y-0.5 active:border-b-2 focus-visible:ring-2 focus-visible:ring-cup focus-visible:outline-none"
         @click="act(() => m.passTurn())"
       >
         {{ isLastThrower ? 'Bekijk het resultaat' : 'Geef door' }}
+      </button>
+      <button
+        v-if="bluff && roll.committed && !claiming"
+        class="w-full min-h-12 rounded-xl font-display text-lg bg-cup text-foam border-2 border-cup-dark active:translate-y-0.5 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
+        @click="openClaim"
+      >
+        Claim een dubbel
+      </button>
+    </div>
+
+    <!-- Bluf: kies welk dubbel je claimt en wie het drinkt (waar of gelogen) -->
+    <div v-if="bluff && roll.committed && claiming" class="space-y-3 rounded-2xl border-2 border-cup bg-night-soft p-4">
+      <p class="text-center text-sm text-foam/70">Welk dubbel claim je?</p>
+      <div class="flex items-center justify-center gap-3">
+        <button
+          class="size-10 rounded-lg font-display text-xl bg-night border-2 border-line disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
+          :disabled="claimValue <= 1"
+          aria-label="Lager dubbel"
+          @click="claimValue = Math.max(1, claimValue - 1)"
+        >−</button>
+        <span class="font-display text-3xl text-beer w-10 text-center">{{ claimValue }}</span>
+        <button
+          class="size-10 rounded-lg font-display text-xl bg-night border-2 border-line disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
+          :disabled="claimValue >= 6"
+          aria-label="Hoger dubbel"
+          @click="claimValue = Math.min(6, claimValue + 1)"
+        >+</button>
+      </div>
+      <p class="text-center text-sm text-foam/70">Wie drinkt de {{ claimValue }} slokken?</p>
+      <div class="flex flex-wrap justify-center gap-2">
+        <button
+          v-for="p in dealTargets"
+          :key="p.id"
+          class="min-h-11 px-4 rounded-xl font-semibold bg-night text-foam border-2 border-line active:translate-y-0.5 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
+          @click="submitClaim(p.id)"
+        >
+          {{ p.name }}
+        </button>
+      </div>
+      <button
+        class="w-full min-h-10 rounded-xl font-display text-foam/60 border-2 border-line focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
+        @click="claiming = false"
+      >
+        Annuleren
       </button>
     </div>
   </section>

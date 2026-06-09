@@ -18,6 +18,7 @@ describe('mex store', () => {
     // the store is a module singleton — reset settings mutated by earlier tests
     m.state.settings.baseSips = 2
     m.state.settings.potPerMex = 0.5
+    m.state.settings.bluffMode = false
   })
 
   function twoPlayers() {
@@ -96,6 +97,67 @@ describe('mex store', () => {
     m.startGame()
     m.throwDice(dieRand(6, 5)) // normal 65
     expect(() => m.dealSips(b)).toThrow(/niets uit/)
+  })
+
+  it('bluff mode: a believed double claim hands out the claimed sips and passes', () => {
+    const [a, b] = twoPlayers()
+    m.setBluffMode(true)
+    m.startGame()
+    m.throwDice(dieRand(6, 5)) // An: 65 — no real double
+    m.stay()
+    m.claimDouble(6, b) // bluff a double 6
+    expect(m.state.round.claim).toMatchObject({ byId: a, value: 6, targetId: b })
+    m.believeClaim()
+    expect(m.playerById(b).sips).toBe(6)
+    expect(m.state.round.claim).toBe(null)
+    expect(m.state.round.turnIndex).toBe(1) // turn passed on
+  })
+
+  it('bluff mode: a challenged bluff makes the bluffer drink double the base sips', () => {
+    const [a, b] = twoPlayers()
+    m.setBluffMode(true)
+    m.startGame()
+    m.throwDice(dieRand(6, 5)) // no real double
+    m.stay()
+    m.claimDouble(6, b)
+    const res = m.challengeClaim(b)
+    expect(res.wasReallyDouble).toBe(false)
+    expect(m.playerById(a).sips).toBe(4) // 2 × base(2)
+    expect(m.playerById(b).sips).toBe(0)
+    expect(m.state.round.claim.revealed).toBe(true)
+    m.ackChallenge()
+    expect(m.state.round.claim).toBe(null)
+  })
+
+  it('bluff mode: a wrong challenge makes the challenger drink double the base sips', () => {
+    const [a, b] = twoPlayers()
+    m.setBluffMode(true)
+    m.startGame()
+    m.throwDice(dieRand(4, 4)) // real double 4
+    m.stay()
+    m.claimDouble(4, b)
+    const res = m.challengeClaim(b)
+    expect(res.wasReallyDouble).toBe(true)
+    expect(m.playerById(b).sips).toBe(4) // challenger pays
+    expect(m.playerById(a).sips).toBe(0)
+  })
+
+  it('bluff mode: claims are validated', () => {
+    const [a, b] = twoPlayers()
+    m.startGame() // bluff off
+    m.throwDice(dieRand(6, 5))
+    m.stay()
+    expect(() => m.claimDouble(6, b)).toThrow(/blufmodus/)
+    m.stopGame()
+    m.setBluffMode(true)
+    m.startGame()
+    m.throwDice(dieRand(6, 5)) // not committed yet (cap 3)
+    expect(() => m.claimDouble(6, b)).toThrow(/vast/)
+    m.stay()
+    expect(() => m.claimDouble(9, b)).toThrow(/1 tot 6/)
+    expect(() => m.claimDouble(6, a)).toThrow(/jezelf/)
+    m.claimDouble(6, b)
+    expect(() => m.challengeClaim(a)).toThrow(/uitdaagt/) // claimer can't challenge themselves
   })
 
   it('clamps base sips to 1..5', () => {

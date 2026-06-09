@@ -7,7 +7,7 @@ function freshState() {
   return {
     phase: 'lobby', // lobby | playing | result
     players: [],    // { id, name, sips, adjes }
-    settings: { baseSips: 2, potPerMex: 0.5 }, // potPerMex in adjes per thrown Mex
+    settings: { baseSips: 2, potPerMex: 0.5, bluffMode: false }, // potPerMex in adjes per thrown Mex
     round: null,
     lastResult: null,
   }
@@ -27,6 +27,7 @@ function freshRound(number, order) {
     turnIndex: 0,
     rolls: Object.fromEntries(order.map(id => [id, freshRollState()])),
     rolloffIds: null,
+    claim: null, // bluff mode: { byId, value, targetId } awaiting believe/challenge
   }
 }
 
@@ -120,6 +121,9 @@ const actions = {
     // quarter-adje steps between ¼ and 1
     state.settings.potPerMex = Math.min(1, Math.max(0.25, Math.round(amount * 4) / 4))
   },
+  setBluffMode(on) {
+    state.settings.bluffMode = !!on
+  },
 
   startGame() {
     if (state.players.length < 2) throw new Error('Minstens 2 spelers nodig')
@@ -183,6 +187,59 @@ const actions = {
     if (!target) throw new Error('Onbekende speler')
     target.sips += amount
     roll.dealt = true
+  },
+
+  // Bluff mode: claim a double (truthfully or not) so you may hand out sips.
+  // The phone is passed face-down — the table only sees the claim, not the dice.
+  claimDouble(value, targetId) {
+    requirePlaying()
+    if (!state.settings.bluffMode) throw new Error('Bluffen kan alleen in blufmodus')
+    const roll = currentRoll()
+    if (!roll.committed) throw new Error('Leg eerst je worp vast')
+    if (state.round.claim) throw new Error('Er ligt al een claim')
+    const v = Math.round(value)
+    if (v < 1 || v > 6) throw new Error('Kies een dubbel van 1 tot 6')
+    if (!this.playerById(targetId)) throw new Error('Kies wie de slokken drinkt')
+    const byId = activeIds()[state.round.turnIndex]
+    if (targetId === byId) throw new Error('Je kunt niet aan jezelf uitdelen')
+    state.round.claim = { byId, value: v, targetId }
+  },
+
+  // The table believes the claim: the claimed sips are handed out, turn passes.
+  believeClaim() {
+    requirePlaying()
+    const claim = state.round.claim
+    if (!claim) throw new Error('Geen claim om te beoordelen')
+    this.playerById(claim.targetId).sips += claim.value
+    state.round.claim = null
+    this.passTurn()
+  },
+
+  // A challenger calls the bluff: reveal the dice. No real double → the claimer
+  // drinks double the base sips; a real double → the challenger drinks double.
+  challengeClaim(challengerId) {
+    requirePlaying()
+    const claim = state.round.claim
+    if (!claim) throw new Error('Geen claim om uit te dagen')
+    if (challengerId === claim.byId || !this.playerById(challengerId)) {
+      throw new Error('Kies een tegenstander die uitdaagt')
+    }
+    const roll = state.round.rolls[claim.byId]
+    const wasReallyDouble = roll.dice[0] !== null && roll.dice[0] === roll.dice[1]
+    const penalty = 2 * state.settings.baseSips
+    const drinkerId = wasReallyDouble ? challengerId : claim.byId
+    this.playerById(drinkerId).sips += penalty
+    state.round.claim = { ...claim, revealed: true, wasReallyDouble, drinkerId }
+    return { wasReallyDouble, drinkerId, penalty }
+  },
+
+  // Clear a resolved challenge and pass the turn on (lets the table see the
+  // revealed dice before the next player takes over).
+  ackChallenge() {
+    requirePlaying()
+    if (!state.round.claim?.revealed) throw new Error('Geen onthulde claim')
+    state.round.claim = null
+    this.passTurn()
   },
 
   _commit() {

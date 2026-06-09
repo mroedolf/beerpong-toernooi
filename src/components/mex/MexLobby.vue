@@ -149,6 +149,15 @@ function toggleSound() {
         </div>
       </div>
       <div class="flex items-center justify-between gap-3">
+        <span class="text-sm font-semibold">Blufmodus</span>
+        <button
+          class="min-h-10 px-4 rounded-lg font-display bg-night border-2 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
+          :class="m.state.settings.bluffMode ? 'border-cup text-cup' : 'border-line text-foam/50'"
+          :aria-pressed="m.state.settings.bluffMode"
+          @click="m.setBluffMode(!m.state.settings.bluffMode)"
+        >{{ m.state.settings.bluffMode ? 'Aan' : 'Uit' }}</button>
+      </div>
+      <div class="flex items-center justify-between gap-3">
         <span class="text-sm font-semibold">Geluid bij speciale worpen</span>
         <button
           class="min-h-10 px-4 rounded-lg font-display bg-night border-2 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
@@ -171,6 +180,12 @@ function toggleSound() {
         <li>Laagste worp van de ronde drinkt de basis-slokken plus de pot.</li>
         <li>Gelijkstand onderaan? Roll-off: één worp, verliezer drinkt.</li>
         <li>De verliezer mag de volgende ronde voorgooien.</li>
+        <li v-if="m.state.settings.bluffMode">
+          <strong>Blufmodus:</strong> de gsm gaat dicht door. Bij het doorgeven mag je een dubbel
+          claimen — waar of gelogen. Geloven ze het, dan deel je de slokken uit; challengen ze en had
+          je geen dubbel, dan drink je het dubbele van de basis. Was het wél een dubbel, dan drinkt de
+          uitdager het dubbele.
+        </li>
       </ul>
     </details>
 

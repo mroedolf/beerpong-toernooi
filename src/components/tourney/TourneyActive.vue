@@ -1,14 +1,25 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useTourney } from '../../store/tourney.js'
 import { toast } from '../../store/toast.js'
 import TourneyMatch from './TourneyMatch.vue'
+import TourneyShare from './TourneyShare.vue'
 
 const t = useTourney()
 
 const stage = computed(() => t.state.stage)
 const round = computed(() => t.state.round)
 const useScores = computed(() => t.state.config.useScores)
+const canEdit = computed(() => t.canEdit())
+
+// Viewers auto-refresh so a shared tournament stays roughly live.
+let poll = null
+onMounted(() => {
+  poll = setInterval(() => {
+    if (t.role() === 'viewer' && !t.state.shareSyncing) t.pull().catch(() => {})
+  }, 12000)
+})
+onUnmounted(() => clearInterval(poll))
 
 const koTitle = computed(() => {
   const n = t.currentMatches().length
@@ -69,6 +80,8 @@ function backToSetup() {
       <p class="text-sm text-foam/60">{{ progress.done }}/{{ progress.total }} gespeeld</p>
     </header>
 
+    <TourneyShare />
+
     <div v-for="block in blocks" :key="block.label ?? 'all'" class="space-y-2">
       <h3 v-if="block.label" class="font-display text-beer">{{ block.label }}</h3>
       <ul class="space-y-2">
@@ -77,7 +90,7 @@ function backToSetup() {
     </div>
 
     <button
-      v-if="label"
+      v-if="label && canEdit"
       class="w-full min-h-14 rounded-xl font-display text-2xl bg-cup text-foam border-b-4 border-cup-dark active:translate-y-0.5 active:border-b-2 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
       @click="advance"
     >
@@ -99,6 +112,7 @@ function backToSetup() {
     </div>
 
     <button
+      v-if="canEdit"
       class="w-full min-h-10 rounded-xl font-display text-foam/60 border-2 border-line focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
       @click="backToSetup"
     >

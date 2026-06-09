@@ -4,8 +4,28 @@ import {
   seedBracket, bracketRoundMatches, nextBracketRound, bracketChampion,
   swissRoundMatches, playedKeysOf, isPlayed, loserOf,
 } from '../lib/tourney.js'
+import { createTournament, updateTournament, fetchTournament } from '../lib/cloud.js'
 
 export const TOURNEY_STORAGE_KEY = 'drankspelen:tourney:v1'
+const OWNERS_KEY = 'drankspelen:tourney:owners' // { [shareId]: ownerToken } — kept off the shared blob
+
+// Owner tokens live in their own key so loading a shared tournament never
+// clobbers the secrets that grant edit rights on this device.
+function loadOwners() {
+  try { return JSON.parse(localStorage.getItem(OWNERS_KEY)) || {} } catch { return {} }
+}
+function getOwnerToken(id) {
+  return id ? loadOwners()[id] ?? null : null
+}
+function setOwnerToken(id, token) {
+  const map = loadOwners()
+  map[id] = token
+  try { localStorage.setItem(OWNERS_KEY, JSON.stringify(map)) } catch { /* quota */ }
+}
+
+// Coalesce rapid owner edits into one in-flight push.
+let pushDirty = false
+let pushing = false
 
 function freshConfig() {
   return {
@@ -31,7 +51,16 @@ function freshState() {
     round: 0,       // current round (swiss/knockout); max round otherwise
     matches: [],
     champion: null,
+    shareId: null,      // remote id once published; the share link carries it
+    shareSyncing: false,
+    shareError: null,
   }
+}
+
+// The shareable game data — the transient sync flags stay local.
+function snapshotOf(s) {
+  const { phase, players, config, teams, groups, stage, round, matches, champion } = s
+  return { phase, players, config, teams, groups, stage, round, matches, champion }
 }
 
 const clampInt = (n, lo, hi) => Math.min(hi, Math.max(lo, Math.round(Number(n) || lo)))
@@ -173,6 +202,7 @@ const actions = {
   // --- Results -------------------------------------------------------------
   recordResult(matchId, winnerId, scoreA = null, scoreB = null) {
     requireActive()
+    this._requireEditable()
     const match = state.matches.find(m => m.id === matchId)
     if (!match) throw new Error('Wedstrijd niet gevonden')
     if (!this._isCurrent(match)) throw new Error('Deze ronde ligt al vast')
@@ -189,14 +219,17 @@ const actions = {
     match.winnerId = winnerId
     match.scoreA = coerce(scoreA)
     match.scoreB = coerce(scoreB)
+    this._pushSoon()
   },
   clearResult(matchId) {
     requireActive()
+    this._requireEditable()
     const match = state.matches.find(m => m.id === matchId)
     if (!match || match.teamB === null || !this._isCurrent(match)) return
     match.winnerId = null
     match.scoreA = null
     match.scoreB = null
+    this._pushSoon()
   },
 
   // --- Stage / round progression ------------------------------------------
@@ -224,7 +257,13 @@ const actions = {
 
   advance() {
     requireActive()
+    this._requireEditable()
     if (!this.roundComplete()) throw new Error('Speel eerst alle wedstrijden van deze ronde')
+    this._advanceStage()
+    this._pushSoon()
+  },
+
+  _advanceStage() {
     const c = state.config
     if (state.stage === 'league') return this._finish()
     if (state.stage === 'swiss') {
@@ -330,6 +369,7 @@ const actions = {
   },
 
   backToSetup() {
+    this._requireEditable()
     // Keep players & config; drop the bracket so settings can be tweaked.
     state.phase = 'setup'
     state.teams = []
@@ -338,9 +378,106 @@ const actions = {
     state.stage = null
     state.round = 0
     state.champion = null
+    this._pushSoon()
   },
   reset() {
     Object.assign(state, freshState())
+  },
+
+  // --- Sharing -------------------------------------------------------------
+  role() {
+    if (!state.shareId) return 'local'
+    return getOwnerToken(state.shareId) ? 'owner' : 'viewer'
+  },
+  canEdit() {
+    return this.role() !== 'viewer'
+  },
+  isShared() {
+    return Boolean(state.shareId)
+  },
+  _requireEditable() {
+    if (this.role() === 'viewer') {
+      throw new Error('Alleen de maker kan dit gedeelde toernooi aanpassen')
+    }
+  },
+  _snapshot() {
+    return snapshotOf(state)
+  },
+
+  // Publish the current tournament and keep the secret owner token on this
+  // device. Returns the public share id.
+  async publish() {
+    if (state.phase === 'setup') throw new Error('Start het toernooi eerst voor je het deelt')
+    if (state.shareId) return state.shareId
+    state.shareSyncing = true
+    state.shareError = null
+    try {
+      const { id, ownerToken } = await createTournament(this._snapshot())
+      setOwnerToken(id, ownerToken)
+      state.shareId = id
+      return id
+    } catch (e) {
+      state.shareError = e.message
+      throw e
+    } finally {
+      state.shareSyncing = false
+    }
+  },
+
+  // Load a shared tournament by id (replaces the local view). The device keeps
+  // edit rights only if it holds the owner token for this id.
+  async loadShared(id) {
+    state.shareSyncing = true
+    state.shareError = null
+    try {
+      const { data } = await fetchTournament(id)
+      const clean = sanitizeState(data)
+      Object.assign(state, {
+        phase: clean.phase,
+        players: clean.players,
+        config: clean.config,
+        teams: clean.teams,
+        groups: clean.groups,
+        stage: clean.stage,
+        round: clean.round,
+        matches: clean.matches,
+        champion: clean.champion,
+        shareId: id,
+        shareError: null,
+      })
+    } catch (e) {
+      state.shareError = e.message
+      throw e
+    } finally {
+      state.shareSyncing = false
+    }
+  },
+
+  // Refresh the current shared tournament from the server (for viewers).
+  async pull() {
+    if (state.shareId) await this.loadShared(state.shareId)
+  },
+
+  _pushSoon() {
+    if (this.role() !== 'owner' || !state.shareId) return
+    pushDirty = true
+    if (!pushing) this._push()
+  },
+  async _push() {
+    pushing = true
+    try {
+      while (pushDirty) {
+        pushDirty = false
+        state.shareSyncing = true
+        await updateTournament(state.shareId, getOwnerToken(state.shareId), this._snapshot())
+        state.shareError = null
+      }
+    } catch (e) {
+      state.shareError = e.message
+    } finally {
+      state.shareSyncing = false
+      pushing = false
+    }
   },
 }
 

@@ -11,6 +11,7 @@ const match = computed(() => t.state.matches.find(m => m.id === props.matchId))
 const useScores = computed(() => t.state.config.useScores)
 const isBye = computed(() => match.value.teamB === null)
 const played = computed(() => match.value.winnerId !== null)
+const canEdit = computed(() => t.canEdit())
 
 const nameA = computed(() => t.teamName(match.value.teamA))
 const nameB = computed(() => (isBye.value ? null : t.teamName(match.value.teamB)))
@@ -68,6 +69,25 @@ const side = (id) =>
       </div>
       <span class="text-xs font-semibold text-foam/50 shrink-0">vrije ronde →</span>
     </div>
+
+    <!-- Read-only (viewer) -->
+    <template v-else-if="!canEdit">
+      <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+        <div class="min-w-0 text-left" :class="played && match.winnerId === match.teamA ? 'text-beer' : (played ? 'opacity-50' : '')">
+          <span class="font-semibold block truncate">{{ nameA }}</span>
+          <span v-if="membersA.length > 1" class="text-xs text-foam/50 block truncate">{{ membersA.join(' & ') }}</span>
+        </div>
+        <span class="font-display text-sm text-foam/40 tabular-nums">
+          <template v-if="useScores && match.scoreA !== null">{{ match.scoreA }}–{{ match.scoreB }}</template>
+          <template v-else>vs</template>
+        </span>
+        <div class="min-w-0 text-right" :class="played && match.winnerId === match.teamB ? 'text-beer' : (played ? 'opacity-50' : '')">
+          <span class="font-semibold block truncate">{{ nameB }}</span>
+          <span v-if="membersB.length > 1" class="text-xs text-foam/50 block truncate">{{ membersB.join(' & ') }}</span>
+        </div>
+      </div>
+      <p v-if="!played" class="mt-1 text-center text-xs text-foam/40">Nog niet gespeeld</p>
+    </template>
 
     <!-- Winner-only -->
     <template v-else-if="!useScores">

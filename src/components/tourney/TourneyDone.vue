@@ -1,11 +1,13 @@
 <script setup>
 import { computed } from 'vue'
 import { useTourney } from '../../store/tourney.js'
+import TourneyShare from './TourneyShare.vue'
 
 const t = useTourney()
 
 const champion = computed(() => t.teamName(t.state.champion))
 const ranking = computed(() => t.finalRanking())
+const canEdit = computed(() => t.canEdit())
 const medals = ['🥇', '🥈', '🥉']
 </script>
 
@@ -38,7 +40,9 @@ const medals = ['🥇', '🥈', '🥉']
       </li>
     </ol>
 
-    <div class="space-y-2">
+    <TourneyShare />
+
+    <div v-if="canEdit" class="space-y-2">
       <button
         class="w-full min-h-14 rounded-xl font-display text-2xl bg-cup text-foam border-b-4 border-cup-dark active:translate-y-0.5 active:border-b-2 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
         @click="t.backToSetup()"

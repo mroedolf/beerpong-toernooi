@@ -1,7 +1,16 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+
+vi.mock('../lib/cloud.js', () => ({
+  createTournament: vi.fn(),
+  updateTournament: vi.fn(),
+  fetchTournament: vi.fn(),
+}))
+
 import { useTourney, sanitizeState } from './tourney.js'
+import * as cloud from '../lib/cloud.js'
 
 const stable = () => 0.999 // Fisher-Yates no-op → team pools keep player order
+const flush = () => new Promise(r => setTimeout(r, 0))
 
 describe('tourney store', () => {
   let t
@@ -163,5 +172,64 @@ describe('tourney store', () => {
     const ok = sanitizeState({ phase: 'setup', players: [], config: { format: 'swiss' } })
     expect(ok.config.format).toBe('swiss')
     expect(ok.config.teamSize).toBe(2) // missing keys backfilled
+  })
+})
+
+describe('tourney sharing', () => {
+  let t
+  beforeEach(() => {
+    localStorage.clear()
+    t = useTourney()
+    t.reset()
+    cloud.createTournament.mockReset().mockResolvedValue({ id: 'abc', ownerToken: 'secret' })
+    cloud.updateTournament.mockReset().mockResolvedValue(true)
+    cloud.fetchTournament.mockReset()
+  })
+
+  function startKnockout() {
+    for (let i = 0; i < 4; i++) t.addPlayer(`P${i}`)
+    t.setFormat('knockout')
+    t.start(stable)
+  }
+
+  it('publishing stores the owner token and grants edit rights', async () => {
+    startKnockout()
+    const id = await t.publish()
+    expect(id).toBe('abc')
+    expect(t.state.shareId).toBe('abc')
+    expect(t.role()).toBe('owner')
+    expect(t.canEdit()).toBe(true)
+    expect(cloud.createTournament).toHaveBeenCalledOnce()
+  })
+
+  it('an owner edit pushes the new state to the server', async () => {
+    startKnockout()
+    await t.publish()
+    const m = t.currentMatches()[0]
+    t.recordResult(m.id, m.teamA)
+    await flush()
+    expect(cloud.updateTournament).toHaveBeenCalledWith('abc', 'secret', expect.any(Object))
+  })
+
+  it('a viewer (no owner token) cannot edit scores', () => {
+    startKnockout()
+    t.state.shareId = 'someone-elses' // linked, but no token on this device
+    expect(t.role()).toBe('viewer')
+    expect(t.canEdit()).toBe(false)
+    const m = t.currentMatches()[0]
+    expect(() => t.recordResult(m.id, m.teamA)).toThrow(/maker/)
+    expect(() => t.advance()).toThrow(/maker/)
+  })
+
+  it('loadShared applies remote data as a viewer and does not push', async () => {
+    startKnockout()
+    const snap = JSON.parse(JSON.stringify(t._snapshot()))
+    t.reset()
+    cloud.fetchTournament.mockResolvedValue({ data: snap, updatedAt: 't' })
+    await t.loadShared('xyz')
+    expect(t.state.shareId).toBe('xyz')
+    expect(t.role()).toBe('viewer')
+    expect(t.state.teams).toHaveLength(snap.teams.length)
+    expect(cloud.updateTournament).not.toHaveBeenCalled()
   })
 })

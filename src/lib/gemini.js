@@ -45,10 +45,13 @@ export async function generateTeamPhoto({ apiKey, prompt, photos }) {
   try {
     res = await fetch(ENDPOINT, {
       method: 'POST',
+      // Only CORS-safe headers: a custom header like `Api-Revision` makes the
+      // browser preflight ask for it, which Google rejects (403) — the fetch
+      // then throws and looks like "no connection". The API uses its default
+      // revision without it.
       headers: {
         'Content-Type': 'application/json',
         'x-goog-api-key': apiKey,
-        'Api-Revision': '2026-05-20',
       },
       body: JSON.stringify({
         model: MODEL,

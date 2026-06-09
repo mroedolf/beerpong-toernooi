@@ -44,6 +44,33 @@ describe('mex store', () => {
     expect(m.state.players.map(p => p.name)).toEqual(['An', 'Bert'])
   })
 
+  it('reorders players in the lobby and stays in bounds', () => {
+    m.addPlayer('An')
+    m.addPlayer('Bert')
+    m.addPlayer('Cas')
+    m.movePlayer(m.state.players[2].id, -1) // Cas up one
+    expect(m.state.players.map(p => p.name)).toEqual(['An', 'Cas', 'Bert'])
+    m.movePlayer(m.state.players[0].id, -1) // already first — no-op
+    expect(m.state.players.map(p => p.name)).toEqual(['An', 'Cas', 'Bert'])
+    m.movePlayer(m.state.players[2].id, 1) // already last — no-op
+    expect(m.state.players.map(p => p.name)).toEqual(['An', 'Cas', 'Bert'])
+  })
+
+  it('cannot reorder players outside the lobby', () => {
+    const [a] = twoPlayers()
+    m.startGame()
+    expect(() => m.movePlayer(a, 1)).toThrow(/lobby/)
+  })
+
+  it('a Mex auto-commits the roll so the turn defaults to passing on', () => {
+    const [a] = twoPlayers()
+    m.startGame()
+    m.throwDice(dieRand(2, 1)) // An: MEX on throw 1
+    expect(m.state.round.rolls[a].committed).toBe(true)
+    expect(m.state.round.maxThrows).toBe(1) // starter locking in caps the round
+    expect(() => m.throwDice(dieRand(6, 5))).toThrow() // no more throws after a Mex
+  })
+
   it('clamps base sips to 1..5', () => {
     m.setBaseSips(9)
     expect(m.state.settings.baseSips).toBe(5)
@@ -124,8 +151,7 @@ describe('mex store', () => {
   it('every thrown Mex fills the pot; the loser drinks it as adjes', () => {
     const [a, b] = twoPlayers()
     m.startGame()
-    m.throwDice(dieRand(2, 1)) // An: MEX → +½ adje in the pot
-    m.stay()
+    m.throwDice(dieRand(2, 1)) // An: MEX → +½ adje in the pot, auto-commits
     m.passTurn()
     m.throwDice(dieRand(4, 3)) // Bert 43 — auto-commit (cap 1)
     m.passTurn()
@@ -141,8 +167,7 @@ describe('mex store', () => {
     twoPlayers()
     m.setPotPerMex(1)
     m.startGame()
-    m.throwDice(dieRand(2, 1)) // MEX
-    m.stay()
+    m.throwDice(dieRand(2, 1)) // MEX — auto-commits
     m.passTurn()
     m.throwDice(dieRand(4, 3))
     m.passTurn()
@@ -227,8 +252,7 @@ describe('mex store', () => {
   it('stopGame returns to lobby keeping tallies; newGame wipes them', () => {
     const [, b] = twoPlayers()
     m.startGame()
-    m.throwDice(dieRand(2, 1)) // MEX → pot ½
-    m.stay()
+    m.throwDice(dieRand(2, 1)) // MEX → pot ½, auto-commits
     m.passTurn()
     m.throwDice(dieRand(4, 1))
     m.passTurn()

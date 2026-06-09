@@ -95,6 +95,14 @@ const actions = {
     if (state.phase !== 'lobby') throw new Error('Spelers wijzigen kan alleen in de lobby')
     state.players = state.players.filter(p => p.id !== id)
   },
+  movePlayer(id, delta) {
+    if (state.phase !== 'lobby') throw new Error('Volgorde wijzigen kan alleen in de lobby')
+    const i = state.players.findIndex(p => p.id === id)
+    const j = i + delta
+    if (i < 0 || j < 0 || j >= state.players.length) return
+    const players = state.players
+    ;[players[i], players[j]] = [players[j], players[i]]
+  },
   importPlayers(names) {
     const existing = new Set(state.players.map(p => p.name))
     for (const name of names) {
@@ -134,7 +142,8 @@ const actions = {
     }
     roll.throwsUsed += 1
     if (score.isMex) state.round.mexCount += 1
-    if (roll.throwsUsed >= throwCap()) this._commit()
+    // A Mex is unbeatable — lock it in so the turn defaults to passing on.
+    if (score.isMex || roll.throwsUsed >= throwCap()) this._commit()
   },
 
   toggleHold(i) {

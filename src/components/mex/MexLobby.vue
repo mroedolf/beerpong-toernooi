@@ -4,11 +4,13 @@ import { useMex } from '../../store/mex.js'
 import { useTournament } from '../../store/tournament.js'
 import { toast } from '../../store/toast.js'
 import { formatAdjes } from '../../lib/mex.js'
+import { isMuted, toggleMuted } from '../../lib/sound.js'
 
 const m = useMex()
 const t = useTournament()
 
 const newName = ref('')
+const soundOn = ref(!isMuted())
 const canImport = computed(() =>
   t.state.players.length > 0 &&
   t.state.players.some(p => !m.state.players.find(mp => mp.name === p.name)),
@@ -35,6 +37,10 @@ function add() {
   } catch (e) {
     toast(e.message)
   }
+}
+
+function toggleSound() {
+  soundOn.value = !toggleMuted()
 }
 </script>
 
@@ -74,6 +80,20 @@ function add() {
         class="flex items-center gap-3 rounded-2xl border-2 border-line bg-night-soft px-4 py-3 shadow-[4px_4px_0_rgba(0,0,0,.55)]"
         :class="i % 2 ? 'rotate-[1.2deg]' : '-rotate-1'"
       >
+        <div class="flex flex-col -my-1">
+          <button
+            class="size-7 grid place-items-center rounded-md text-foam/60 hover:text-beer disabled:opacity-25 disabled:hover:text-foam/60 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
+            :disabled="i === 0"
+            aria-label="Speler omhoog"
+            @click="act(() => m.movePlayer(p.id, -1))"
+          >▲</button>
+          <button
+            class="size-7 grid place-items-center rounded-md text-foam/60 hover:text-beer disabled:opacity-25 disabled:hover:text-foam/60 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
+            :disabled="i === m.state.players.length - 1"
+            aria-label="Speler omlaag"
+            @click="act(() => m.movePlayer(p.id, 1))"
+          >▼</button>
+        </div>
         <span class="flex-1 font-semibold">{{ p.name }}</span>
         <span v-if="p.sips > 0 || p.adjes > 0" class="font-display text-beer text-sm">
           {{ p.sips }} slokken<template v-if="p.adjes > 0"> · {{ formatAdjes(p.adjes) }} adje</template>
@@ -86,6 +106,9 @@ function add() {
       </li>
     </ul>
     <p v-else class="text-center text-sm text-foam/50">Nog niemand. Wie durft?</p>
+    <p v-if="m.state.players.length > 1" class="text-center text-xs text-foam/40">
+      Tik op ▲▼ om de gooivolgorde aan te passen.
+    </p>
 
     <fieldset class="rounded-2xl border-2 border-line bg-night-soft p-4 space-y-4">
       <legend class="font-display text-beer px-2">Huisregels</legend>
@@ -124,6 +147,15 @@ function add() {
             @click="m.setPotPerMex(m.state.settings.potPerMex + 0.25)"
           >+</button>
         </div>
+      </div>
+      <div class="flex items-center justify-between gap-3">
+        <span class="text-sm font-semibold">Geluid bij speciale worpen</span>
+        <button
+          class="min-h-10 px-4 rounded-lg font-display bg-night border-2 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
+          :class="soundOn ? 'border-beer text-beer' : 'border-line text-foam/50'"
+          :aria-pressed="soundOn"
+          @click="toggleSound"
+        >{{ soundOn ? 'Aan' : 'Uit' }}</button>
       </div>
     </fieldset>
 

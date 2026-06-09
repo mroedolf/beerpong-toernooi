@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useMex } from '../../store/mex.js'
 import { scoreRoll, formatAdjes } from '../../lib/mex.js'
 import { toast } from '../../store/toast.js'
+import { playMex, playDouble, playReturn31 } from '../../lib/sound.js'
 import MexDie from './MexDie.vue'
 
 const m = useMex()
@@ -34,6 +35,18 @@ function act(fn) {
   } catch (e) {
     toast(e.message)
   }
+}
+
+// Roll the dice and give special outcomes their own sound cue.
+function throwDice() {
+  act(() => {
+    m.throwDice()
+    const s = score.value
+    if (!s) return
+    if (s.isMex) playMex()
+    else if (s.isDouble) playDouble()
+    else if (s.rank === 31) playReturn31()
+  })
 }
 </script>
 
@@ -98,7 +111,7 @@ function act(fn) {
       <button
         v-if="canThrow"
         class="w-full min-h-14 rounded-xl font-display text-2xl bg-cup text-foam border-b-4 border-cup-dark active:translate-y-0.5 active:border-b-2 focus-visible:ring-2 focus-visible:ring-beer focus-visible:outline-none"
-        @click="act(() => m.throwDice())"
+        @click="throwDice"
       >
         Gooi
       </button>

@@ -3,9 +3,11 @@ import {
   makeTeams, roundRobin, standings, finalsPairings, finalRanking, isPlayed,
 } from '../lib/schedule.js'
 import { randomTeamName, randomScenario } from '../lib/names.js'
+import { createTournament, updateTournament, fetchTournament } from '../lib/cloud.js'
 
 export const STORAGE_KEY = 'beerpong:v1'
 export const API_KEY_STORAGE = 'beerpong:apikey'
+const OWNERS_KEY = 'drankspelen:beerpong:owners' // { [shareId]: ownerToken }
 
 function freshState() {
   return {
@@ -16,6 +18,7 @@ function freshState() {
     finalMatch: null,
     losersMatch: null,
     settings: { cupsPerGame: 10, losersFinal: true },
+    shareId: null, // remote id once shared; the share link carries it
   }
 }
 
@@ -31,6 +34,7 @@ export function mergeState(parsed) {
       cupsPerGame: parsed.settings?.cupsPerGame === 6 ? 6 : 10,
       losersFinal: parsed.settings?.losersFinal !== false,
     },
+    shareId: parsed.shareId ?? null,
   }
 }
 
@@ -48,12 +52,65 @@ function load() {
 
 const state = reactive(load())
 
+// --- Sharing -------------------------------------------------------------
+// Owner tokens live in their own key so loading a shared tournament never wipes
+// the secrets that grant edit rights on this device.
+function loadOwners() {
+  try { return JSON.parse(localStorage.getItem(OWNERS_KEY)) || {} } catch { return {} }
+}
+function getOwnerToken(id) {
+  return id ? loadOwners()[id] ?? null : null
+}
+function setOwnerToken(id, token) {
+  const map = loadOwners()
+  map[id] = token
+  try { localStorage.setItem(OWNERS_KEY, JSON.stringify(map)) } catch { /* quota */ }
+}
+
+// Transient sync flags live outside `state` so updating them never re-triggers
+// the persist/push watch (which would loop forever).
+export const shareStatus = reactive({ syncing: false, error: null })
+
+// The shareable blob. `kind` guards against opening a link in the wrong game.
+function snapshot() {
+  const { phase, players, teams, groupMatches, finalMatch, losersMatch, settings } = state
+  return { kind: 'beerpong', phase, players, teams, groupMatches, finalMatch, losersMatch, settings }
+}
+
+let pushTimer = null
+let pushing = false
+let pendingPush = false
+async function doPush() {
+  if (pushing) { pendingPush = true; return }
+  pushing = true
+  shareStatus.syncing = true
+  try {
+    do {
+      pendingPush = false
+      await updateTournament(state.shareId, getOwnerToken(state.shareId), snapshot())
+    } while (pendingPush)
+    shareStatus.error = null
+  } catch (e) {
+    shareStatus.error = e.message
+  } finally {
+    pushing = false
+    shareStatus.syncing = false
+  }
+}
+// Owner edits flow to the server automatically; viewers (no token) never push.
+function scheduleRemotePush() {
+  if (!state.shareId || !getOwnerToken(state.shareId)) return
+  clearTimeout(pushTimer)
+  pushTimer = setTimeout(doPush, 600)
+}
+
 watch(state, value => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(value))
   } catch {
     // Quota exceeded — keep playing in memory; surfaced via UI toast on photo saves.
   }
+  scheduleRemotePush()
 }, { deep: true })
 
 function findMatch(matchId) {
@@ -82,6 +139,7 @@ const actions = {
   },
 
   buildTeams(rand = Math.random) {
+    this._requireEditable()
     const pairs = makeTeams(state.players.map(p => p.id), rand)
     const used = new Set()
     state.teams = pairs.map(playerIds => {
@@ -115,6 +173,7 @@ const actions = {
   },
 
   startGroup() {
+    this._requireEditable()
     if (state.teams.length < 2) throw new Error('Eerst teams maken')
     state.groupMatches = roundRobin(state.teams.map(t => t.id))
     state.phase = 'group'
@@ -131,6 +190,7 @@ const actions = {
   },
 
   recordResult(matchId, winnerId, cupsLeft) {
+    this._requireEditable()
     const match = findMatch(matchId)
     if (!match) throw new Error('Wedstrijd niet gevonden')
     if (winnerId !== match.teamA && winnerId !== match.teamB) throw new Error('Winnaar speelt niet mee in deze wedstrijd')
@@ -143,6 +203,7 @@ const actions = {
     match.cupsLeft = cups
   },
   clearResult(matchId) {
+    this._requireEditable()
     const match = findMatch(matchId)
     if (!match) return
     match.winnerId = null
@@ -157,6 +218,7 @@ const actions = {
   },
 
   startFinals() {
+    this._requireEditable()
     if (!this.groupDone()) throw new Error('De groepsfase is nog niet klaar')
     const { final, losersFinal } = finalsPairings(this.currentStandings(), state.settings.losersFinal)
     state.finalMatch = final
@@ -165,6 +227,7 @@ const actions = {
   },
 
   finishTournament() {
+    this._requireEditable()
     if (!state.finalMatch || !isPlayed(state.finalMatch) || (state.losersMatch && !isPlayed(state.losersMatch))) {
       throw new Error(state.losersMatch ? 'Speel eerst beide finales' : 'Speel eerst de finale')
     }
@@ -186,6 +249,65 @@ const actions = {
   },
   getApiKey() {
     return localStorage.getItem(API_KEY_STORAGE) ?? ''
+  },
+
+  // --- Sharing -----------------------------------------------------------
+  role() {
+    if (!state.shareId) return 'local'
+    return getOwnerToken(state.shareId) ? 'owner' : 'viewer'
+  },
+  canEdit() {
+    return this.role() !== 'viewer'
+  },
+  isShared() {
+    return Boolean(state.shareId)
+  },
+  shareStatus() {
+    return shareStatus
+  },
+  _requireEditable() {
+    if (this.role() === 'viewer') throw new Error('Alleen de maker kan dit gedeelde toernooi aanpassen')
+  },
+
+  // Publish the current tournament and keep the secret owner token locally.
+  async publish() {
+    if (state.phase === 'setup') throw new Error('Maak eerst teams voor je het toernooi deelt')
+    if (state.shareId) return state.shareId
+    shareStatus.syncing = true
+    shareStatus.error = null
+    try {
+      const { id, ownerToken } = await createTournament(snapshot())
+      setOwnerToken(id, ownerToken)
+      state.shareId = id
+      return id
+    } catch (e) {
+      shareStatus.error = e.message
+      throw e
+    } finally {
+      shareStatus.syncing = false
+    }
+  },
+
+  // Load a shared tournament by id (replaces the local view). Edit rights stay
+  // only if this device holds the owner token.
+  async loadShared(id) {
+    shareStatus.syncing = true
+    shareStatus.error = null
+    try {
+      const { data } = await fetchTournament(id)
+      if (data.kind && data.kind !== 'beerpong') throw new Error('Deze link hoort bij een ander spel')
+      const clean = mergeState({ ...data, shareId: id })
+      Object.assign(state, clean)
+    } catch (e) {
+      shareStatus.error = e.message
+      throw e
+    } finally {
+      shareStatus.syncing = false
+    }
+  },
+
+  async pull() {
+    if (state.shareId) await this.loadShared(state.shareId)
   },
 
   resetAll() {

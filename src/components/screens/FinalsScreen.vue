@@ -4,8 +4,10 @@ import { useTournament } from '../../store/tournament.js'
 import { toast } from '../../store/toast.js'
 import MatchCard from '../ui/MatchCard.vue'
 import ScoreDialog from '../ui/ScoreDialog.vue'
+import TournamentShare from '../ui/TournamentShare.vue'
 
 const t = useTournament()
+const canEdit = computed(() => t.canEdit())
 
 // Which match is open in the score dialog (the match object, or null).
 const dialogMatch = ref(null)
@@ -26,6 +28,7 @@ const teamA = computed(() => finalMatch.value && t.teamById(finalMatch.value.tea
 const teamB = computed(() => finalMatch.value && t.teamById(finalMatch.value.teamB))
 
 function openDialog(match) {
+  if (!canEdit.value) return // viewers see the result on the card, read-only
   dialogMatch.value = match
 }
 
@@ -44,6 +47,8 @@ function finish() {
       <p class="font-display text-beer text-sm tracking-wide uppercase">De ontknoping</p>
       <h1 class="font-display text-3xl text-foam leading-none">De grote finales</h1>
     </header>
+
+    <TournamentShare class="mb-6" />
 
     <!-- BIG MOMENT: diagonal VS split between the two finalists -->
     <section
@@ -100,8 +105,8 @@ function finish() {
       Geen verliezersfinale dit toernooi — de rest mag supporteren.
     </p>
 
-    <!-- CTA to podium -->
-    <div class="fixed inset-x-0 bottom-0 z-20 bg-gradient-to-t from-night via-night to-transparent pt-8 pb-5 px-4">
+    <!-- CTA to podium (creator only) -->
+    <div v-if="canEdit" class="fixed inset-x-0 bottom-0 z-20 bg-gradient-to-t from-night via-night to-transparent pt-8 pb-5 px-4">
       <div class="max-w-md mx-auto">
         <button
           class="w-full min-h-12 rounded-xl font-display text-lg text-foam bg-cup border-b-4 border-cup-dark active:translate-y-0.5 active:border-b-2 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-beer disabled:opacity-40 disabled:active:translate-y-0 disabled:active:border-b-4"

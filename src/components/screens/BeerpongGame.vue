@@ -1,6 +1,8 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useTournament } from '../../store/tournament.js'
+import { useRoute } from '../../lib/router.js'
+import { toast } from '../../store/toast.js'
 import SetupScreen from './SetupScreen.vue'
 import TeamsScreen from './TeamsScreen.vue'
 import MatchesScreen from './MatchesScreen.vue'
@@ -8,6 +10,16 @@ import FinalsScreen from './FinalsScreen.vue'
 import PodiumScreen from './PodiumScreen.vue'
 
 const t = useTournament()
+const { query } = useRoute()
+
+// Opening a share link (#/beerpong?s=<id>) loads that tournament.
+watch(
+  () => query.value.s,
+  id => {
+    if (id && id !== t.state.shareId) t.loadShared(id).catch(e => toast(e.message))
+  },
+  { immediate: true },
+)
 const screens = {
   setup: SetupScreen,
   teams: TeamsScreen,

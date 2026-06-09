@@ -5,12 +5,14 @@ import { toast } from '../../store/toast.js'
 import MatchCard from '../ui/MatchCard.vue'
 import ScoreDialog from '../ui/ScoreDialog.vue'
 import StandingsTable from '../ui/StandingsTable.vue'
+import TournamentShare from '../ui/TournamentShare.vue'
 
 const t = useTournament()
 
 const matches = computed(() => t.state.groupMatches)
 const playedCount = computed(() => matches.value.filter(m => m.winnerId !== null).length)
 const allDone = computed(() => t.groupDone())
+const canEdit = computed(() => t.canEdit())
 
 // The selected match drives the score dialog. Track by id so the dialog always
 // reads the live store object (and re-renders if its result changes).
@@ -20,6 +22,7 @@ const selectedMatch = computed(() =>
 )
 
 function open(id) {
+  if (!canEdit.value) return // viewers see results on the cards, read-only
   selectedId.value = id
 }
 function closeDialog() {
@@ -44,6 +47,8 @@ function goToFinals() {
       <p v-else class="mt-1 text-sm text-foam/50">Iedereen gespeeld. Tijd voor de finales!</p>
     </header>
 
+    <TournamentShare class="mb-5" />
+
     <ul class="space-y-3">
       <li
         v-for="(match, i) in matches"
@@ -61,8 +66,8 @@ function goToFinals() {
 
     <ScoreDialog v-if="selectedMatch" :match="selectedMatch" @close="closeDialog" />
 
-    <!-- Sticky CTA to the finals -->
-    <div class="fixed inset-x-0 bottom-0 z-30 border-t-2 border-line bg-night/90 backdrop-blur">
+    <!-- Sticky CTA to the finals (creator only) -->
+    <div v-if="canEdit" class="fixed inset-x-0 bottom-0 z-30 border-t-2 border-line bg-night/90 backdrop-blur">
       <div class="mx-auto max-w-md px-4 py-3">
         <button
           type="button"

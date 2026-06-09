@@ -1,6 +1,14 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { nextTick } from 'vue'
+
+vi.mock('../lib/cloud.js', () => ({
+  createTournament: vi.fn(),
+  updateTournament: vi.fn(),
+  fetchTournament: vi.fn(),
+}))
+
 import { useTournament, mergeState, STORAGE_KEY, API_KEY_STORAGE } from './tournament.js'
+import * as cloud from '../lib/cloud.js'
 
 function eightPlayers(t) {
   for (let i = 1; i <= 8; i++) t.addPlayer(`Speler ${i}`)
@@ -185,5 +193,52 @@ describe('tournament store', () => {
     expect(t.getApiKey()).toBe('geheim')
     expect(localStorage.getItem(API_KEY_STORAGE)).toBe('geheim')
     expect(localStorage.getItem(STORAGE_KEY) ?? '').not.toContain('geheim')
+  })
+})
+
+describe('tournament sharing', () => {
+  let t
+  beforeEach(() => {
+    localStorage.clear()
+    t = useTournament()
+    t.resetAll()
+    cloud.createTournament.mockReset().mockResolvedValue({ id: 'bp1', ownerToken: 'tok' })
+    cloud.updateTournament.mockReset().mockResolvedValue(true)
+    cloud.fetchTournament.mockReset()
+  })
+
+  function toGroup() {
+    for (let i = 1; i <= 8; i++) t.addPlayer(`Speler ${i}`)
+    t.buildTeams()
+    t.startGroup()
+  }
+
+  it('publishing stores the owner token and grants edit rights', async () => {
+    toGroup()
+    const id = await t.publish()
+    expect(id).toBe('bp1')
+    expect(t.state.shareId).toBe('bp1')
+    expect(t.role()).toBe('owner')
+    expect(t.canEdit()).toBe(true)
+    expect(cloud.createTournament).toHaveBeenCalledOnce()
+  })
+
+  it('refuses to publish from the setup phase', async () => {
+    await expect(t.publish()).rejects.toThrow(/teams/)
+  })
+
+  it('a viewer (no owner token) cannot record or change scores', () => {
+    toGroup()
+    t.state.shareId = 'someone-elses'
+    expect(t.role()).toBe('viewer')
+    expect(t.canEdit()).toBe(false)
+    const m = t.state.groupMatches[0]
+    expect(() => t.recordResult(m.id, m.teamA, 3)).toThrow(/maker/)
+    expect(() => t.startFinals()).toThrow(/maker/)
+  })
+
+  it('loadShared rejects a link from the other game', async () => {
+    cloud.fetchTournament.mockResolvedValue({ data: { kind: 'tourney', phase: 'active' }, updatedAt: 't' })
+    await expect(t.loadShared('xyz')).rejects.toThrow(/ander spel/)
   })
 })

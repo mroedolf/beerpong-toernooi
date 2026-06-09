@@ -57,10 +57,11 @@ function freshState() {
   }
 }
 
-// The shareable game data — the transient sync flags stay local.
+// The shareable game data — the transient sync flags stay local. `kind` guards
+// against opening this link in the Beerpong tournament (shared table).
 function snapshotOf(s) {
   const { phase, players, config, teams, groups, stage, round, matches, champion } = s
-  return { phase, players, config, teams, groups, stage, round, matches, champion }
+  return { kind: 'tourney', phase, players, config, teams, groups, stage, round, matches, champion }
 }
 
 const clampInt = (n, lo, hi) => Math.min(hi, Math.max(lo, Math.round(Number(n) || lo)))
@@ -431,6 +432,7 @@ const actions = {
     state.shareError = null
     try {
       const { data } = await fetchTournament(id)
+      if (data.kind && data.kind !== 'tourney') throw new Error('Deze link hoort bij een ander spel')
       const clean = sanitizeState(data)
       Object.assign(state, {
         phase: clean.phase,

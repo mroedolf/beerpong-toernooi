@@ -3,8 +3,10 @@ import { computed, onMounted } from 'vue'
 import confetti from 'canvas-confetti'
 import { useTournament } from '../../store/tournament.js'
 import PlayerAvatar from '../ui/PlayerAvatar.vue'
+import TournamentShare from '../ui/TournamentShare.vue'
 
 const t = useTournament()
+const canEdit = computed(() => t.canEdit())
 
 // [championId, runnerUpId, thirdId, fourthId]
 // Guard against being mounted without both finals resolved (e.g. a stale
@@ -174,8 +176,12 @@ onMounted(fireConfetti)
       </ul>
     </section>
 
-    <!-- Footer: start over -->
+    <!-- Share the finished tournament -->
+    <TournamentShare class="mb-4" />
+
+    <!-- Footer: start over (creator only) -->
     <button
+      v-if="canEdit"
       class="w-full min-h-12 rounded-xl font-display text-lg text-foam bg-night-soft border-2 border-line active:translate-y-0.5 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-beer"
       @click="newTournament"
     >

@@ -1,5 +1,6 @@
 import { reactive, watch } from 'vue'
 import { buildDeck, compare, missSips, winSips } from '../lib/ftd.js'
+import { attachRoom } from '../lib/room.js'
 
 export const FTD_STORAGE_KEY = 'ftd:v1'
 
@@ -176,8 +177,21 @@ const actions = {
   },
 }
 
+const { room, roomActions } = attachRoom(state, {
+  game: 'ftd',
+  snapshot: () => ({
+    phase: state.phase, players: state.players, dealerIndex: state.dealerIndex,
+    turnIndex: state.turnIndex, deck: state.deck, table: state.table, step: state.step,
+    firstGuess: state.firstGuess, hint: state.hint, result: state.result,
+  }),
+  applyRemote: d => Object.assign(state, sanitizeState(d)),
+  // The active guesser acts; in 'result' step the same guesser taps on.
+  currentActorId: () =>
+    state.phase === 'playing' ? state.players[state.turnIndex]?.id ?? null : null,
+})
+
 // Some actions call siblings via `this` — keep the store object intact
 // (const d = useFtd()); never destructure actions off it.
 export function useFtd() {
-  return { state, ...actions }
+  return { state, ...actions, room, ...roomActions }
 }

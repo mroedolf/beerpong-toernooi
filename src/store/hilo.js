@@ -1,6 +1,7 @@
 import { reactive, watch } from 'vue'
 import { buildDeck } from '../lib/cod.js'
 import { isCorrect } from '../lib/hilo.js'
+import { attachRoom } from '../lib/room.js'
 
 export const HILO_STORAGE_KEY = 'hilo:v1'
 
@@ -127,8 +128,19 @@ const actions = {
   },
 }
 
+const { room, roomActions } = attachRoom(state, {
+  game: 'hilo',
+  snapshot: () => ({
+    phase: state.phase, players: state.players, deck: state.deck, current: state.current,
+    streak: state.streak, turnIndex: state.turnIndex, lastOutcome: state.lastOutcome,
+  }),
+  applyRemote: d => Object.assign(state, sanitizeState(d)),
+  currentActorId: () =>
+    state.phase === 'playing' ? state.players[state.turnIndex]?.id ?? null : null,
+})
+
 // Some actions call siblings via `this` — keep the store object intact
 // (const h = useHilo()); never destructure actions off it.
 export function useHilo() {
-  return { state, ...actions }
+  return { state, ...actions, room, ...roomActions }
 }

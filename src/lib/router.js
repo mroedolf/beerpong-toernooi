@@ -16,12 +16,16 @@ function queryParam(hash, key) {
   return m ? decodeURIComponent(m[1]) : null
 }
 
+function parseQuery(hash) {
+  return { s: queryParam(hash, 's'), r: queryParam(hash, 'r') }
+}
+
 const path = ref(normalize(window.location.hash))
-const query = ref({ s: queryParam(window.location.hash, 's') })
+const query = ref(parseQuery(window.location.hash))
 
 window.addEventListener('hashchange', () => {
   path.value = normalize(window.location.hash)
-  query.value = { s: queryParam(window.location.hash, 's') }
+  query.value = parseQuery(window.location.hash)
 })
 
 export function navigate(to) {

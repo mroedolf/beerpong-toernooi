@@ -1,13 +1,20 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useFles } from '../../store/fles.js'
 import { useTournament } from '../../store/tournament.js'
 import { useMex } from '../../store/mex.js'
+import { useRoute } from '../../lib/router.js'
 import { toast } from '../../store/toast.js'
+import RoomBar from '../ui/RoomBar.vue'
 
 const f = useFles()
 const t = useTournament()
 const m = useMex()
+const { query } = useRoute()
+
+watch(() => query.value.r, id => {
+  if (id && id !== f.room.id) f.joinRoom(id).catch(e => toast(e.message))
+}, { immediate: true })
 
 const newName = ref('')
 const rotation = ref(0)
@@ -53,18 +60,13 @@ function add() {
 
 const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
-function doSpin() {
-  if (spinning.value) return
-  let picked
-  try {
-    picked = f.spin()
-  } catch (e) {
-    toast(e.message)
-    return
-  }
+// Spin the wheel toward an already-picked player (no re-randomising).
+function animateTo(picked) {
+  if (!picked || spinning.value) return
   result.value = null
   const n = players.value.length
   const index = players.value.findIndex(p => p.id === picked.id)
+  if (index < 0) return
   const target = index * (360 / n)
   const delta = (target - (rotation.value % 360) + 360) % 360
   if (reducedMotion()) {
@@ -80,6 +82,21 @@ function doSpin() {
   spinFallback = setTimeout(onSpinEnd, 3500)
 }
 
+function doSpin() {
+  if (spinning.value) return
+  try {
+    animateTo(f.spin())
+  } catch (e) {
+    toast(e.message)
+  }
+}
+
+// A spin on another device lands here via sync — animate to the same pick.
+watch(() => f.state.lastPickedId, id => {
+  if (!id || spinning.value || id === result.value?.id) return
+  animateTo(f.playerById(id))
+})
+
 function onSpinEnd() {
   if (!spinning.value) return
   clearTimeout(spinFallback)
@@ -94,6 +111,8 @@ function onSpinEnd() {
       <h2 class="font-display text-3xl text-beer">De Fles</h2>
       <p class="text-sm text-foam/60">Wie de fles aanwijst, drinkt.</p>
     </header>
+
+    <RoomBar :store="f" path="/fles" />
 
     <!-- The ring -->
     <div class="relative mx-auto aspect-square max-w-xs select-none">

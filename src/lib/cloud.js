@@ -68,3 +68,29 @@ export async function fetchTournament(id) {
   if (!rows?.length) throw new CloudError('Dit gedeelde toernooi bestaat niet (meer).')
   return { data: rows[0].data, updatedAt: rows[0].updated_at }
 }
+
+// --- Live multiplayer rooms ------------------------------------------------
+// The whole game state lives in one row; everyone with the link shares it.
+export async function createRoom(game, state) {
+  const rows = await rpc('create_room', { p_game: game, p_state: state })
+  const row = Array.isArray(rows) ? rows[0] : rows
+  if (!row?.id) throw new CloudError('Room aanmaken mislukt.')
+  return { id: row.id }
+}
+
+export async function getRoom(id) {
+  ensureConfigured()
+  const rows = await request(
+    `${SUPABASE_URL}/rest/v1/rooms?id=eq.${encodeURIComponent(id)}&select=game,state,rev`,
+    { headers: headers() },
+  )
+  if (!rows?.length) throw new CloudError('Deze room bestaat niet (meer).')
+  return { game: rows[0].game, state: rows[0].state, rev: rows[0].rev }
+}
+
+export async function updateRoom(id, state) {
+  const rows = await rpc('update_room', { p_id: id, p_state: state })
+  const row = Array.isArray(rows) ? rows[0] : rows
+  if (!row || row.rev == null) throw new CloudError('Room bijwerken mislukt.')
+  return { rev: row.rev }
+}

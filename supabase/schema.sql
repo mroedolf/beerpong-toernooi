@@ -50,3 +50,48 @@ end; $$;
 
 grant execute on function public.create_tournament(jsonb) to anon;
 grant execute on function public.update_tournament(text, text, jsonb) to anon;
+
+-- ---------------------------------------------------------------------------
+-- Live multiplayer rooms (Mex, Circle of Death, Hoger Lager, Fuck the Dealer,
+-- De Fles). The whole game state lives in one row; everyone in the room shares
+-- it. The room id (in the link) is the capability — anyone with the link can
+-- play, so there is no per-seat token. `rev` lets clients detect new state.
+create table if not exists public.rooms (
+  id         text primary key default encode(gen_random_bytes(8), 'hex'),
+  game       text not null,
+  state      jsonb not null,
+  rev        bigint not null default 1,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.rooms enable row level security;
+
+drop policy if exists "rooms read" on public.rooms;
+create policy "rooms read" on public.rooms for select using (true);
+
+create or replace function public.create_room(p_game text, p_state jsonb)
+returns table(id text)
+language plpgsql security definer set search_path = public as $$
+declare new_id text;
+begin
+  insert into public.rooms(game, state) values (p_game, p_state)
+  returning rooms.id into new_id;
+  return query select new_id;
+end; $$;
+
+-- Anyone in the room may write the shared state (trust-based, casual play).
+create or replace function public.update_room(p_id text, p_state jsonb)
+returns table(rev bigint)
+language plpgsql security definer set search_path = public as $$
+declare new_rev bigint;
+begin
+  update public.rooms
+     set state = p_state, rev = rev + 1, updated_at = now()
+   where id = p_id
+  returning rooms.rev into new_rev;
+  return query select new_rev;
+end; $$;
+
+grant execute on function public.create_room(text, jsonb) to anon;
+grant execute on function public.update_room(text, jsonb) to anon;

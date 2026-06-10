@@ -1,4 +1,5 @@
 import { reactive, watch } from 'vue'
+import { attachRoom } from '../lib/room.js'
 
 export const FLES_STORAGE_KEY = 'fles:v1'
 
@@ -71,8 +72,20 @@ const actions = {
   },
 }
 
+// Free-for-all: no turns, anyone in the room may spin. State just syncs.
+const { room, roomActions } = attachRoom(state, {
+  game: 'fles',
+  mode: 'free',
+  snapshot: () => ({ players: state.players, lastPickedId: state.lastPickedId }),
+  applyRemote: d => Object.assign(state, {
+    players: Array.isArray(d.players) ? d.players : [],
+    lastPickedId: d.lastPickedId ?? null,
+  }),
+  currentActorId: () => null,
+})
+
 // Some actions call siblings via `this` — keep the store object intact
 // (const f = useFles()); never destructure actions off it.
 export function useFles() {
-  return { state, ...actions }
+  return { state, ...actions, room, ...roomActions }
 }

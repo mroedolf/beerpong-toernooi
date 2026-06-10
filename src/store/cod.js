@@ -1,5 +1,6 @@
 import { reactive, watch } from 'vue'
 import { buildDeck } from '../lib/cod.js'
+import { attachRoom } from '../lib/room.js'
 
 export const COD_STORAGE_KEY = 'cod:v1'
 
@@ -108,8 +109,19 @@ const actions = {
   },
 }
 
+const { room, roomActions } = attachRoom(state, {
+  game: 'cod',
+  snapshot: () => ({
+    phase: state.phase, players: state.players, deck: state.deck,
+    current: state.current, kingsDrawn: state.kingsDrawn, turnIndex: state.turnIndex,
+  }),
+  applyRemote: d => Object.assign(state, sanitizeState(d)),
+  currentActorId: () =>
+    state.phase === 'playing' ? state.players[state.turnIndex]?.id ?? null : null,
+})
+
 // Some actions call siblings via `this` — keep the store object intact
 // (const c = useCod()); never destructure actions off it.
 export function useCod() {
-  return { state, ...actions }
+  return { state, ...actions, room, ...roomActions }
 }

@@ -1,5 +1,6 @@
 import { reactive, watch } from 'vue'
 import { rollDie, scoreRoll, lowestOf, dealableSips } from '../lib/mex.js'
+import { attachRoom } from '../lib/room.js'
 
 export const MEX_STORAGE_KEY = 'beerpong:mex:v2'
 
@@ -302,8 +303,22 @@ const actions = {
   },
 }
 
+const { room, roomActions } = attachRoom(state, {
+  game: 'mex',
+  snapshot: () => ({
+    phase: state.phase, players: state.players, settings: state.settings,
+    round: state.round, lastResult: state.lastResult,
+  }),
+  applyRemote: d => Object.assign(state, sanitizeState(d)),
+  currentActorId: () => {
+    if (state.phase !== 'playing' || !state.round) return null
+    const ids = state.round.rolloffIds ?? state.round.order
+    return ids[state.round.turnIndex] ?? null
+  },
+})
+
 // Some actions call siblings via `this` — keep the store object intact
 // (const m = useMex()); never destructure actions off it.
 export function useMex() {
-  return { state, ...actions }
+  return { state, ...actions, room, ...roomActions }
 }

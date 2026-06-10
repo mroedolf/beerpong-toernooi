@@ -33,6 +33,14 @@ export const GAMES = [
     players: '2+ spelers',
   },
   {
+    id: 'ftd',
+    path: '/dealer',
+    emoji: '🤞',
+    name: 'Fuck the Dealer',
+    tagline: 'Raad de kaart juist en de deler drinkt.',
+    players: '2+ spelers',
+  },
+  {
     id: 'fles',
     path: '/fles',
     emoji: '🍾',

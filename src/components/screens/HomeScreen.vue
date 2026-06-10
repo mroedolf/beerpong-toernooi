@@ -6,6 +6,7 @@ import { useTournament } from '../../store/tournament.js'
 import { useMex } from '../../store/mex.js'
 import { useCod } from '../../store/cod.js'
 import { useHilo } from '../../store/hilo.js'
+import { useFtd } from '../../store/ftd.js'
 import { useFles } from '../../store/fles.js'
 import { useTourney } from '../../store/tourney.js'
 import { isPlayed } from '../../lib/schedule.js'
@@ -14,6 +15,7 @@ const t = useTournament()
 const m = useMex()
 const c = useCod()
 const h = useHilo()
+const ftd = useFtd()
 const f = useFles()
 const tr = useTourney()
 
@@ -50,6 +52,14 @@ const hiloStatus = computed(() => {
   return h.state.players.length > 0 ? `${h.state.players.length} spelers klaar` : null
 })
 
+const ftdStatus = computed(() => {
+  if (ftd.state.phase === 'playing') {
+    const dealer = ftd.state.players[ftd.state.dealerIndex]
+    return `Deler: ${dealer?.name ?? '?'} · ${ftd.state.deck.length} kaarten`
+  }
+  return ftd.state.players.length > 0 ? `${ftd.state.players.length} spelers klaar` : null
+})
+
 const flesStatus = computed(() => {
   const last = f.state.lastPickedId ? f.playerById(f.state.lastPickedId) : null
   if (last) return `Laatst: ${last.name}`
@@ -67,6 +77,7 @@ const statusFor = {
   mex: mexStatus,
   cod: codStatus,
   hilo: hiloStatus,
+  ftd: ftdStatus,
   fles: flesStatus,
   tourney: tourneyStatus,
 }

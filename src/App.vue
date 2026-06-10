@@ -7,6 +7,7 @@ import BeerpongGame from './components/screens/BeerpongGame.vue'
 import MexScreen from './components/screens/MexScreen.vue'
 import CodScreen from './components/screens/CodScreen.vue'
 import HiloScreen from './components/screens/HiloScreen.vue'
+import FtdScreen from './components/screens/FtdScreen.vue'
 import FlesScreen from './components/screens/FlesScreen.vue'
 import TourneyScreen from './components/screens/TourneyScreen.vue'
 
@@ -18,6 +19,7 @@ const routes = {
   '/mex': MexScreen,
   '/circle': CodScreen,
   '/hogerlager': HiloScreen,
+  '/dealer': FtdScreen,
   '/fles': FlesScreen,
   '/toernooi': TourneyScreen,
 }
